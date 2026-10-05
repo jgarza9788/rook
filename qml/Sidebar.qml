@@ -55,6 +55,18 @@ Rectangle {
             activateRow(number - 1);
     }
 
+    // Every place with somewhere to go, in sidebar order — the palette's
+    // ~ mode. Unmounted volumes have no location yet and are left out.
+    function placeList() {
+        const out = [];
+        for (let i = 0; i < places.count; ++i) {
+            const p = places.get(i);
+            if (p.location)
+                out.push({ name: p.name, location: p.location });
+        }
+        return out;
+    }
+
     function isBookmarked(location) {
         return places.isBookmarked(location);
     }
@@ -226,7 +238,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: row.ejectable
                 text: "⏏"
-                color: ejectMouse.containsMouse ? Colors.accent : Colors.textDim
+                color: ejectMouse.containsMouse ? Colors.text : Colors.textDim
                 font.pixelSize: 12
 
                 MouseArea {
@@ -258,7 +270,7 @@ Rectangle {
                     height: parent.height
                     radius: 1
                     color: row.usedFraction > 0.9 ? Colors.error
-                         : row.current ? Colors.selectionText : Colors.accent
+                         : row.current ? Colors.selectionText : Colors.textDim
                 }
             }
 
@@ -513,7 +525,7 @@ Rectangle {
                                 width: parent.width * modelData.progress
                                 height: parent.height
                                 radius: 2
-                                color: Colors.accent
+                                color: Colors.text
                             }
                         }
 

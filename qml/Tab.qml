@@ -769,6 +769,7 @@ FocusScope {
         case "q": commandRequested("closeTab", null); return true;
         case "b": commandRequested("sidebar", null); return true;
         case "?": commandRequested("help", null); return true;
+        case ":": commandRequested("palette", ""); return true;
         }
         if (t.length === 1 && t >= "1" && t <= "9") {
             commandRequested("place", parseInt(t));

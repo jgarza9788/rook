@@ -59,7 +59,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             source: rowItem.icon !== ""
                     ? Colors.fileIcon(rowItem.icon, rowItem.selected ? Colors.selectionText
-                                                 : rowItem.isFolder ? Colors.accent : Colors.textDim,
+                                                 : rowItem.isFolder ? Colors.folder : Colors.textDim,
                                       root.iconSize)
                     : ""
             sourceSize: Qt.size(root.iconSize, root.iconSize)
@@ -282,7 +282,7 @@ Item {
                                     : [root.tab.viewingRecent && row.targetPath !== ""
                                        ? row.targetPath : row.filePath];
                                 const icon = Colors.fileIcon(row.iconSource,
-                                    row.isDir ? Colors.accent : Colors.textDim, 36);
+                                    row.isDir ? Colors.folder : Colors.textDim, 36);
                                 dragProxy.prepare(paths, row.displayName, icon, icon);
                             }
                             onClicked: mouse => {

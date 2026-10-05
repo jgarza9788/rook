@@ -24,14 +24,14 @@ OmDialog {
 
         Image {
             anchors.horizontalCenter: parent.horizontalCenter
-            source: Colors.tint("image://fileicon/folder", Colors.accent)
+            source: "qrc:/qt/qml/Rook/packaging/rook.svg"
             sourceSize: Qt.size(64, 64)
         }
 
         Text {
             textFormat: Text.PlainText
             anchors.horizontalCenter: parent.horizontalCenter
-            text: qsTr("Files")
+            text: qsTr("Rook")
             color: Colors.text
             font.pixelSize: 20
             font.bold: true
@@ -48,7 +48,7 @@ OmDialog {
         Text {
             textFormat: Text.PlainText
             anchors.horizontalCenter: parent.horizontalCenter
-            text: qsTr("A native file manager for Omarchy.")
+            text: qsTr("A palette-first file manager. Work in progress.")
             color: Colors.textDim
             font.pixelSize: 12
         }

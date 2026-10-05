@@ -110,7 +110,7 @@ OmDialog {
                 Layout.preferredWidth: 48
                 Layout.preferredHeight: 48
                 source: properties.itemCount > 0
-                        ? Colors.tint(properties.iconSource, Colors.accent) : ""
+                        ? Colors.tint(properties.iconSource, Colors.folder) : ""
                 sourceSize: Qt.size(48, 48)
             }
 

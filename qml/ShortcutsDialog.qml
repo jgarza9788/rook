@@ -131,7 +131,7 @@ OmDialog {
                                     textFormat: Text.PlainText
                                     width: 200
                                     text: modelData[0]
-                                    color: Colors.accent
+                                    color: Colors.text
                                     font.pixelSize: 12
                                     font.family: "monospace"
                                 }

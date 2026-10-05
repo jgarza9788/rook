@@ -116,6 +116,13 @@ public:
     // ~, and resolves a relative path against the folder being viewed.
     Q_INVOKABLE QString resolvePath(const QString &input, const QString &base) const;
 
+    // The palette's go-to-path completion: local folders under `input`'s
+    // parent whose names start with its last component (case-insensitive),
+    // resolved like resolvePath, as absolute paths, hidden ones only when
+    // asked for by a leading dot. At most `limit`, sorted by name.
+    Q_INVOKABLE QStringList completeFolder(const QString &input, const QString &base,
+                                           int limit) const;
+
     // Names that already exist in `destinationDir`. The UI asks about
     // conflicts before starting an operation rather than mid-flight, because a
     // dialog that interrupts a running copy is far harder to get right — and

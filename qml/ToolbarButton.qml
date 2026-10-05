@@ -10,7 +10,7 @@ Item {
     property string symbol: ""
     // Unicode glyphs vary wildly in em coverage ("▾" is a speck at any size);
     // buttons whose symbol misbehaves at 15px set their own.
-    property int symbolSize: 15
+    property int symbolSize: 13
     // Marks with no decent Unicode codepoint render through the icon
     // provider's flat SVG glyphs instead; set to a glyphForName key.
     property string glyph: ""
@@ -22,13 +22,13 @@ Item {
     // stops it disabling the MouseArea for us.
     signal triggered()
 
-    implicitWidth: 32
-    implicitHeight: 32
+    implicitWidth: 24
+    implicitHeight: 22
 
     Rectangle {
         anchors.fill: parent
-        anchors.margins: 2
-        radius: 4
+        anchors.margins: 1
+        radius: 3
         color: root.active ? Colors.selection
              : mouse.containsMouse && root.enabled ? Colors.hover : "transparent"
     }
@@ -47,8 +47,8 @@ Item {
     Image {
         anchors.centerIn: parent
         visible: root.glyph !== ""
-        width: 16
-        height: 16
+        width: 14
+        height: 14
         sourceSize: Qt.size(32, 32)
         source: root.glyph === "" ? ""
               : Colors.tint("image://fileicon/" + root.glyph,

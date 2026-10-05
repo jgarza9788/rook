@@ -23,11 +23,17 @@ QtObject {
     readonly property color text: themed ? Theme.textColor : (dark ? "#eeeeee" : "#1c1c1c")
     readonly property color textDim: themed ? Theme.textDimColor : (dark ? "#8a8a8a" : "#6b6b6b")
 
+    // The one accent, and it means something: focus, selection and the
+    // active mode. Nothing decorative wears it — folders, links and frames
+    // use the neutral roles below.
     readonly property color accent: themed ? Theme.accentColor : (dark ? "#7aa2f7" : "#3457d5")
-    readonly property color selection: themed ? Theme.selectionColor : (dark ? "#2c3a5a" : "#d3e0ff")
-    // What a label sitting on the selection colour must be drawn in — the
-    // built-in selections are mid-tones the normal text reads fine on.
-    readonly property color selectionText: themed ? Theme.selectionTextColor : (dark ? "#eeeeee" : "#1c1c1c")
+    // Selection is the accent laid over the window, so the two never drift
+    // apart; the normal text reads fine on a tint this light.
+    readonly property color selection: Qt.tint(themed ? Theme.windowColor : (dark ? "#101010" : "#fbfbfb"),
+                                               Qt.alpha(accent, dark ? 0.32 : 0.22))
+    readonly property color selectionText: text
+    // Folder glyphs: a step brighter than file glyphs, never the accent.
+    readonly property color folder: Qt.tint(textDim, Qt.alpha(text, 0.45))
     readonly property color hover: themed ? Theme.hoverColor : (dark ? "#1e1e1e" : "#eaeaea")
 
     readonly property color error: themed ? Theme.errorColor : "#f7768e"
@@ -39,7 +45,12 @@ QtObject {
     readonly property int fadeInMs: 110
     readonly property int popInMs: 140
     readonly property real popInScale: 0.96
-    readonly property int rowHeight: 30
+    // Compact by default: rows, bars and hit targets sized for a dense
+    // tiling desktop rather than a touch-friendly GNOME window.
+    readonly property int rowHeight: 22
+    readonly property int barHeight: 26
+    // Sizes, counts, dates and keys — anything that lines up in columns.
+    readonly property string mono: "monospace"
 
     // Ask the icon provider for the flat theme-coloured glyph instead of the
     // GTK theme icon. The colour rides the URL (minus its '#', which a URL

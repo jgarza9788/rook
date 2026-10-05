@@ -171,14 +171,14 @@ static void checkListIconSizing(QQuickWindow *window, QQuickItem *tab,
     QTRY_VERIFY(findItem(tab, "previewPath", path));
     auto *preview = findItem(tab, "previewPath", path);
     QCOMPARE(preview->width(), 18);
-    QCOMPARE(findFileRow(tab, path)->height(), 30);
+    QCOMPARE(findFileRow(tab, path)->height(), 24); // compact: 18px icon + 6
 
     QTest::keyClick(window, Qt::Key_Equal, Qt::ControlModifier);
     QTRY_COMPARE(preview->width(), 24);
     QTest::keyClick(window, Qt::Key_Plus, Qt::ControlModifier);
     QTRY_COMPARE(preview->width(), 32);
     QCOMPARE(preview->property("sourceSize").toSize(), QSize(32, 32));
-    QTRY_COMPARE(findFileRow(tab, path)->height(), 44);
+    QTRY_COMPARE(findFileRow(tab, path)->height(), 38); // 32px icon + 6
     for (int i = 0; i < 8; ++i)
         QTest::keyClick(window, Qt::Key_Equal, Qt::ControlModifier);
     QTRY_COMPARE(preview->width(), 64);
@@ -1451,6 +1451,8 @@ static QStringList tabStripLabels(QQuickItem *root)
     QStringList labels;
     for (QQuickItem *delegate : strip) {
         for (QQuickItem *child : delegate->childItems()) {
+            if (child->objectName() == QStringLiteral("tabNumber"))
+                continue;
             const QString text = child->property("text").toString();
             if (!text.isEmpty() && text != QStringLiteral("×"))
                 labels.append(text);
@@ -2367,6 +2369,23 @@ void TestQmlViews::polishScreenshots()
         QTest::qWait(350); // past the open motion
         QVERIFY(window->grabWindow().save(dir + "/" + name + ".png"));
     };
+
+    shoot("main");
+
+    // Rook's palette: the command list, then the path mode's completion.
+    QTest::keyClick(window, Qt::Key_P, Qt::ControlModifier | Qt::ShiftModifier);
+    QTRY_VERIFY(window->property("paletteOpen").toBool());
+    shoot("palette");
+    QVERIFY(QMetaObject::invokeMethod(window, "openPalette", Q_ARG(QVariant,
+        QVariant(tree.path().left(tree.path().lastIndexOf('/') + 1)))));
+    shoot("palette-path");
+    QTest::keyClick(window, Qt::Key_Escape);
+    QTRY_VERIFY(!window->property("paletteOpen").toBool());
+
+    QTest::keyClick(window, Qt::Key_F3);
+    shoot("split");
+    QTest::keyClick(window, Qt::Key_F3);
+    tab->forceActiveFocus();
 
     auto *prefs = window->findChild<QObject *>("preferencesDialog");
     QVERIFY(QMetaObject::invokeMethod(prefs, "open"));

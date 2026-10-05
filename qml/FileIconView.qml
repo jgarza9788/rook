@@ -163,7 +163,7 @@ Item {
                     source: wantThumbnail ? thumbnailSource
                                           : Colors.fileIcon(cell.iconSource,
                                                 root.tab.isSelected(cell.name) ? Colors.selectionText
-                                              : cell.isDir ? Colors.accent
+                                              : cell.isDir ? Colors.folder
                                               : Colors.textDim, root.iconSize)
                     sourceSize: Qt.size(root.iconSize, root.iconSize)
                     asynchronous: true
@@ -291,7 +291,7 @@ Item {
                                 : [root.tab.viewingRecent && cell.targetPath !== ""
                                    ? cell.targetPath : cell.filePath];
                     dragProxy.prepare(paths, cell.displayName, preview.source,
-                        Colors.fileIcon(cell.iconSource, cell.isDir ? Colors.accent : Colors.textDim, 36));
+                        Colors.fileIcon(cell.iconSource, cell.isDir ? Colors.folder : Colors.textDim, 36));
                 }
 
                 onClicked: mouse => {

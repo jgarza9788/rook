@@ -9,7 +9,7 @@ Canvas {
     property real fraction: 0
     property bool done: false
 
-    readonly property color accentNow: Colors.accent
+    readonly property color accentNow: Colors.text
 
     width: 14
     height: 14
@@ -30,7 +30,7 @@ Canvas {
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, 2 * Math.PI);
         ctx.stroke();
-        ctx.fillStyle = Colors.accent;
+        ctx.fillStyle = Colors.text;
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         const sweep = done ? 2 * Math.PI

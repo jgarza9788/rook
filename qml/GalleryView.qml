@@ -134,7 +134,7 @@ Item {
                     source: wantThumbnail ? thumbnailSource
                           : Colors.fileIcon(cell.iconSource,
                                             cell.selected ? Colors.selectionText
-                                          : cell.isDir ? Colors.accent : Colors.textDim, root.thumbSize)
+                                          : cell.isDir ? Colors.folder : Colors.textDim, root.thumbSize)
                     sourceSize: Qt.size(root.thumbSize, root.thumbSize)
                     asynchronous: true
                     onStatusChanged: if (status === Image.Error && wantThumbnail) failedSource = thumbnailSource

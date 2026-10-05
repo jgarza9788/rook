@@ -107,6 +107,8 @@ set(ROOK_QML_FILES
     qml/QuickView.qml
     qml/PreviewPane.qml
     qml/ColumnsView.qml
+    qml/CommandPalette.qml
+    qml/Commands.qml
     qml/GalleryView.qml
     qml/InfoPanel.qml
     qml/ChecksumBox.qml
@@ -156,7 +158,8 @@ endif()
 message(STATUS "rook quick view: media=${Qt6Multimedia_FOUND} pdf=${Qt6PdfQuick_FOUND}")
 
 qt_add_executable(rook src/main.cpp ${ROOK_SOURCES})
-qt_add_qml_module(rook URI Rook VERSION 1.0 QML_FILES ${ROOK_QML_FILES})
+qt_add_qml_module(rook URI Rook VERSION 1.0 QML_FILES ${ROOK_QML_FILES}
+    RESOURCES packaging/rook.svg)
 
 # GIO's gdbusintrospection.h declares a struct member named `signals`, which
 # Qt's unprefixed keyword macros turn into a syntax error. Any Qt+GIO project
@@ -197,7 +200,8 @@ if(ROOK_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt
     qt_add_executable(tst_qmlviews tests/tst_qmlviews.cpp ${ROOK_SOURCES})
     qt_add_qml_module(tst_qmlviews URI Rook VERSION 1.0
         OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/qml/Rook
-        QML_FILES ${ROOK_QML_FILES})
+        QML_FILES ${ROOK_QML_FILES}
+        RESOURCES packaging/rook.svg)
     target_compile_definitions(tst_qmlviews PRIVATE QT_NO_KEYWORDS ${ROOK_OPTIONAL_DEFINITIONS})
     target_include_directories(tst_qmlviews PRIVATE src)
     target_link_libraries(tst_qmlviews PRIVATE ${ROOK_LIBRARIES})
@@ -208,6 +212,7 @@ install(TARGETS rook RUNTIME DESTINATION bin)
 install(FILES LICENSE DESTINATION share/licenses/rook)
 install(FILES packaging/rook.desktop DESTINATION share/applications)
 install(FILES packaging/rook.svg DESTINATION share/icons/hicolor/scalable/apps)
+install(FILES packaging/rook-symbolic.svg DESTINATION share/icons/hicolor/symbolic/apps)
 install(DIRECTORY packaging/actions/ DESTINATION share/rook/actions FILES_MATCHING PATTERN "*.toml")
 install(PROGRAMS packaging/bin/rook-dropbox-link DESTINATION bin)
 install(PROGRAMS packaging/bin/rook-switch packaging/bin/rook-launch

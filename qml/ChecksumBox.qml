@@ -80,7 +80,7 @@ ColumnLayout {
             textFormat: Text.PlainText
             visible: root.verdict !== 0
             text: root.verdict > 0 ? "✓ " + qsTr("match") : "✗ " + qsTr("differs")
-            color: root.verdict > 0 ? Colors.accent : Colors.error
+            color: root.verdict > 0 ? Colors.text : Colors.error
             font.pixelSize: 12
             font.bold: true
         }

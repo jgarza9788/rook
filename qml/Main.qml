@@ -255,90 +255,36 @@ Window {
         anchors.fill: parent
         spacing: 0
 
+        // The top line: no header bar, just where you are (breadcrumbs, or
+        // the search field in their place), the tabs, and the palette — the
+        // way into every command that used to be a toolbar button.
         Rectangle {
+            id: topLine
             Layout.fillWidth: true
-            Layout.preferredHeight: 44
+            Layout.preferredHeight: Colors.barHeight
             color: Colors.chrome
+
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: 1
+                color: Colors.border
+            }
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
-                spacing: 4
+                anchors.leftMargin: 4
+                anchors.rightMargin: 4
+                anchors.bottomMargin: 1
+                spacing: 2
 
-                // Nautilus 50's sidebar header: search, the app name and
-                // the main menu sit over the sidebar column; with the sidebar
-                // hidden (F9) the two buttons stay, compact, and the name goes.
-                RowLayout {
-                    spacing: 4
-                    // A nested layout defaults to fillWidth: true — it would
-                    // fight the path bar for every spare pixel.
-                    Layout.fillWidth: false
-                    Layout.preferredWidth: root.sidebarInline ? sidebar.width - 16 : -1
-                    Layout.rightMargin: root.sidebarInline ? 8 : 0
-
-                    // Nautilus 50's show-sidebar button: only while the
-                    // sidebar is out of the layout, hidden or narrow.
-                    ToolbarButton {
-                        visible: !root.sidebarInline
-                        glyph: "view-sidebar"
-                        tip: qsTr("Show Sidebar (F9)")
-                        active: root.sidebarOverlayOpen
-                        onTriggered: root.toggleSidebar()
-                    }
-
-                    ToolbarButton {
-                        symbol: "⌕"
-                        tip: "Search (Ctrl+F)"
-                        active: root.searchOpen
-                        onTriggered: root.searchOpen ? root.closeSearch() : root.openSearch()
-                    }
-
-                    // Issue #28: New Folder one click away, not only in the
-                    // ⋮ and right-click menus.
-                    ToolbarButton {
-                        id: newFolderButton
-                        objectName: "newFolderButton"
-                        symbol: "+"
-                        tip: qsTr("New Folder (Ctrl+Shift+N)")
-                        enabled: root.currentTab !== null && root.viewWritable
-                        onTriggered: root.newFolder()
-                    }
-
-                    Text {
-                        textFormat: Text.PlainText
-                        visible: root.sidebarInline
-                        Layout.fillWidth: true
-                        horizontalAlignment: Text.AlignHCenter
-                        // Search and + sit to the left, only the menu to the
-                        // right: pad by one button so the name stays centred.
-                        rightPadding: newFolderButton.width + 4
-                        text: "Files"
-                        color: Colors.text
-                        font.pixelSize: 14
-                        font.bold: true
-                    }
-
-                    ToolbarButton {
-                        id: menuButton
-                        symbol: "≡"
-                        tip: "Main menu"
-                        onTriggered: mainMenu.popup(menuButton, 0, menuButton.height)
-                    }
-                }
-
+                // Only while the sidebar is out of the layout, hidden or narrow.
                 ToolbarButton {
-                    symbol: "←"
-                    tip: "Back (Alt+Left)"
-                    enabled: root.currentTab && root.currentTab.history.canGoBack
-                    onTriggered: root.currentTab.goBack()
-                }
-
-                ToolbarButton {
-                    symbol: "→"
-                    tip: "Forward (Alt+Right)"
-                    enabled: root.currentTab && root.currentTab.history.canGoForward
-                    onTriggered: root.currentTab.goForward()
+                    visible: !root.sidebarInline
+                    glyph: "view-sidebar"
+                    tip: qsTr("Show Sidebar (F9)")
+                    active: root.sidebarOverlayOpen
+                    onTriggered: root.toggleSidebar()
                 }
 
                 PathBar {
@@ -346,7 +292,7 @@ Window {
                     objectName: "pathBar"
 
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 32
+                    Layout.preferredHeight: 22
                     visible: !root.searchOpen
                     path: root.currentTab ? root.currentTab.path : ""
                     onMenuRequested: pathBarMenu.popup()
@@ -360,13 +306,13 @@ Window {
                     }
                 }
 
-                // Search lives in the path bar's slot, as in Nautilus: no
-                // extra row — the field replaces the breadcrumbs in place
-                // while search is open, and the query still lives on the
-                // tab so switching tabs shows that tab's search.
+                // Search lives in the path bar's slot, as in Nautilus: the
+                // field replaces the breadcrumbs in place while search is
+                // open, and the query still lives on the tab so switching
+                // tabs shows that tab's search.
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 32
+                    Layout.preferredHeight: 22
                     visible: root.searchOpen
                     radius: Colors.radius
                     color: Colors.window
@@ -632,69 +578,56 @@ Window {
                     }
                 }
 
-                ToolbarButton {
-                    // Cycles list › grid › columns › gallery and shows the
-                    // view you'd switch TO. "▦" was a crosshatch mess at 15px.
-                    readonly property string next: root.nextViewMode()
-                    glyph: next === "icon" ? "view-grid" : ""
-                    symbol: next === "columns" ? "▥" : next === "gallery" ? "▭" : "☰"
-                    tip: qsTr("Switch view (Ctrl+1 list, Ctrl+2 grid, Ctrl+3 columns, Ctrl+4 gallery)")
-                    onTriggered: root.setViewMode(next)
-                }
+                // Tabs, inline and only when there is more than one.
+                Row {
+                    id: tabLine
+                    Layout.fillHeight: true
+                    Layout.maximumWidth: topLine.width * 0.45
+                    visible: tabModel.count > 1
+                    spacing: 2
+                    clip: true
 
-                ToolbarButton {
-                    id: viewOptionsButton
-                    symbol: "▼"
-                    symbolSize: 12
-                    tip: "View options"
-                    onTriggered: viewOptionsMenu.popup(viewOptionsButton, 0, viewOptionsButton.height)
-                }
-
-                ToolbarButton {
-                    symbol: "✕"
-                    symbolSize: 13
-                    tip: "Close window (Ctrl+Shift+W)"
-                    onTriggered: root.close()
-                }
-            }
-        }
-
-        // Tab strip, hidden when there is only one tab — same as Nautilus.
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: visible ? 32 : 0
-            visible: tabModel.count > 1
-            color: Colors.chrome
-
-            Row {
-                anchors.fill: parent
-                anchors.leftMargin: 6
-                spacing: 2
-
-                Repeater {
-                    model: tabModel
+                    Repeater {
+                        model: tabModel
 
                     delegate: Rectangle {
                         required property int index
                         required property string tabPath
                         required property string tabTitle
 
-                        width: Math.min(200, Math.max(120, root.width / tabModel.count - 8))
-                        height: 28
+                        readonly property bool isCurrent: index === stack.currentIndex
+                        width: Math.min(160, Math.max(70, tabLine.width * 0.4 / tabModel.count))
+                        height: 20
                         anchors.verticalCenter: parent.verticalCenter
-                        radius: 4
-                        color: index === stack.currentIndex ? Colors.window
+                        radius: 3
+                        color: isCurrent ? Colors.window
                              : tabMouse.containsMouse ? Colors.hover : "transparent"
+                        border.color: Colors.border
+                        border.width: isCurrent ? 1 : 0
+
+                        // The tab's number, for Ctrl+Tab counting and the eye.
+                        Text {
+                            id: tabNumber
+                            objectName: "tabNumber"
+                            textFormat: Text.PlainText
+                            anchors.left: parent.left
+                            anchors.leftMargin: 6
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: index + 1
+                            color: Colors.textDim
+                            font.family: Colors.mono
+                            font.pixelSize: 10
+                        }
 
                         Text {
                             textFormat: Text.PlainText
-                            anchors.left: parent.left
-                            anchors.leftMargin: 10
+                            anchors.left: tabNumber.right
+                            anchors.leftMargin: 5
                             anchors.right: closeButton.left
                             anchors.verticalCenter: parent.verticalCenter
                             text: tabTitle || Platform.baseName(tabPath) || "/"
                             color: index === stack.currentIndex ? Colors.text : Colors.textDim
-                            font.pixelSize: 12
+                            font.pixelSize: 11
                             elide: Text.ElideMiddle
                         }
 
@@ -707,11 +640,11 @@ Window {
                             z: 1
 
                             anchors.right: parent.right
-                            anchors.rightMargin: 8
+                            anchors.rightMargin: 5
                             anchors.verticalCenter: parent.verticalCenter
                             text: "×"
                             color: closeMouse.containsMouse ? Colors.text : Colors.textDim
-                            font.pixelSize: 14
+                            font.pixelSize: 12
 
                             MouseArea {
                                 id: closeMouse
@@ -747,6 +680,62 @@ Window {
                             }
                         }
                     }
+                    }
+                }
+
+                // Issue #28: New Folder one click away, not only in the
+                // palette and the right-click menu.
+                ToolbarButton {
+                    id: newFolderButton
+                    objectName: "newFolderButton"
+                    symbol: "+"
+                    tip: qsTr("New Folder (Ctrl+Shift+N)")
+                    enabled: root.currentTab !== null && root.viewWritable
+                    onTriggered: root.newFolder()
+                }
+
+                // The palette trigger: the one way in for the mouse, and a
+                // reminder of the key.
+                Rectangle {
+                    id: paletteTrigger
+                    objectName: "paletteTrigger"
+                    Layout.preferredHeight: 20
+                    Layout.preferredWidth: triggerLabel.implicitWidth + 16
+                    radius: 3
+                    color: root.paletteOpen ? Colors.accent
+                         : triggerMouse.containsMouse ? Colors.hover : "transparent"
+                    border.color: root.paletteOpen ? Colors.accent : Colors.border
+                    border.width: 1
+
+                    Text {
+                        id: triggerLabel
+                        textFormat: Text.PlainText
+                        anchors.centerIn: parent
+                        text: (Settings.keyboardMode === "vim" ? ":" : "⌘") + "  Ctrl+Shift+P"
+                        color: root.paletteOpen ? (Colors.accent.hslLightness > 0.6 ? "#111111" : "#ffffff")
+                                                : Colors.textDim
+                        font.family: Colors.mono
+                        font.pixelSize: 10
+                    }
+
+                    MouseArea {
+                        id: triggerMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.openPalette("")
+                    }
+
+                    ToolTip.visible: triggerMouse.containsMouse
+                    ToolTip.text: qsTr("Command palette — every action, / paths, ~ places, @ filter, ? search")
+                    ToolTip.delay: 600
+                }
+
+                ToolbarButton {
+                    id: menuButton
+                    symbol: "≡"
+                    tip: qsTr("Main menu")
+                    onTriggered: mainMenu.popup(menuButton, 0, menuButton.height)
                 }
             }
         }
@@ -1018,9 +1007,13 @@ Window {
             }
         }
 
+        // The status line, Vim-style: the mode on the left in the accent,
+        // what the view says beside it, and the numbers on the right in
+        // monospace so they hold still as they change.
         Rectangle {
+            id: statusLine
             Layout.fillWidth: true
-            Layout.preferredHeight: 24
+            Layout.preferredHeight: Colors.barHeight - 4
             color: Colors.chrome
 
             Rectangle {
@@ -1029,22 +1022,37 @@ Window {
                 color: Colors.border
             }
 
-            // The status, then a hairline and the one key worth knowing:
-            // "10 items  |  [?] all keys".
+            readonly property color onAccent: Colors.accent.hslLightness > 0.6 ? "#111111" : "#ffffff"
+
             RowLayout {
-                anchors.left: parent.left
-                anchors.leftMargin: 12
-                anchors.right: freeSpaceLabel.visible ? freeSpaceLabel.left : parent.right
-                anchors.rightMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
+                anchors.fill: parent
+                anchors.topMargin: 1
+                anchors.rightMargin: 10
                 spacing: 10
+
+                Rectangle {
+                    id: modeBadge
+                    objectName: "modeBadge"
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: modeText.implicitWidth + 16
+                    color: Colors.accent
+
+                    Text {
+                        id: modeText
+                        textFormat: Text.PlainText
+                        anchors.centerIn: parent
+                        text: root.mode
+                        color: statusLine.onAccent
+                        font.family: Colors.mono
+                        font.pixelSize: 10
+                        font.bold: true
+                    }
+                }
 
                 Text {
                     id: statusLabel
                     textFormat: Text.PlainText
-                    // Its own width, shrinking (and eliding) only when the
-                    // row runs out — not sharing space with the spacer.
-                    Layout.preferredWidth: implicitWidth
+                    Layout.fillWidth: true
                     Layout.minimumWidth: 40
                     // A long selected name gives up its middle, keeping the start
                     // and the extension (and the "(copy)" before it).
@@ -1060,19 +1068,101 @@ Window {
                     font.pixelSize: 11
                 }
 
-                Rectangle {
-                    Layout.preferredWidth: 1
-                    Layout.preferredHeight: 12
-                    color: Colors.border
+                Row {
+                    spacing: 8
+                    visible: FileOperations.busy
+
+                    ProgressBar {
+                        width: 120
+                        anchors.verticalCenter: parent.verticalCenter
+                        from: 0
+                        to: 1
+                        value: FileOperations.progress
+                        indeterminate: FileOperations.progress <= 0
+                    }
+
+                    Text {
+                        textFormat: Text.PlainText
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: qsTr("cancel")
+                        color: cancelMouse.containsMouse ? Colors.text : Colors.textDim
+                        font.family: Colors.mono
+                        font.pixelSize: 10
+                        font.underline: true
+
+                        MouseArea {
+                            id: cancelMouse
+                            anchors.fill: parent
+                            anchors.margins: -6
+                            hoverEnabled: true
+                            onClicked: FileOperations.cancel()
+                        }
+                    }
+                }
+
+                // The view, and what shapes it; a click opens the view
+                // options (sort, columns, zoom) that the header used to hold.
+                Text {
+                    id: viewOptionsButton
+                    readonly property string tip: qsTr("View options")
+                    textFormat: Text.PlainText
+                    visible: root.currentTab !== null
+                    text: root.currentTab ? root.viewMode + (root.currentTab.showHidden ? " +hidden" : "") + " ▾"
+                                          : ""
+                    color: viewOptionsMouse.containsMouse ? Colors.text : Colors.textDim
+                    font.family: Colors.mono
+                    font.pixelSize: 10
+
+                    MouseArea {
+                        id: viewOptionsMouse
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: viewOptionsMenu.popup(viewOptionsButton, 0, -viewOptionsMenu.height)
+                    }
+
+                    ToolTip.visible: viewOptionsMouse.containsMouse
+                    ToolTip.text: tip
+                    ToolTip.delay: 600
+                }
+
+                // selected/total, the way a pager shows a position.
+                Text {
+                    id: countLabel
+                    textFormat: Text.PlainText
+                    visible: root.currentTab !== null
+                    text: root.currentTab
+                          ? (root.currentTab.selectionCount > 0 ? root.currentTab.selectionCount + "/" : "")
+                            + root.currentTab.files.count
+                          : ""
+                    color: root.currentTab && root.currentTab.selectionCount > 0 ? Colors.text : Colors.textDim
+                    font.family: Colors.mono
+                    font.pixelSize: 10
+                }
+
+                // Room left where this folder lives — re-read whenever the folder
+                // changes or an operation finishes, which is when it moves.
+                Text {
+                    id: freeSpaceLabel
+                    textFormat: Text.PlainText
+                    readonly property real bytes: FileOperations.busy, root.currentPath
+                                                  ? Platform.freeSpace(root.currentPath) : -1
+                    visible: !FileOperations.busy && bytes >= 0
+                    text: qsTr("%1 free").arg(Platform.formatSize(bytes))
+                    color: Colors.textDim
+                    font.family: Colors.mono
+                    font.pixelSize: 10
                 }
 
                 Text {
                     id: keysHint
                     textFormat: Text.PlainText
                     // `?` is a vim key; classic mode types it into type-ahead.
-                    text: (Settings.keyboardMode === "vim" ? "[?]" : "[Ctrl+?]") + " " + qsTr("all keys")
+                    text: Settings.keyboardMode === "vim" ? "? keys" : "Ctrl+? keys"
                     color: keysMouse.containsMouse ? Colors.text : Colors.textDim
-                    font.pixelSize: 11
+                    font.family: Colors.mono
+                    font.pixelSize: 10
 
                     MouseArea {
                         id: keysMouse
@@ -1081,57 +1171,6 @@ Window {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: shortcutsDialog.open()
-                    }
-                }
-
-                Item { Layout.fillWidth: true }
-            }
-
-            // Room left where this folder lives — re-read whenever the folder
-            // changes or an operation finishes, which is when it moves.
-            Text {
-                id: freeSpaceLabel
-                textFormat: Text.PlainText
-                anchors.right: parent.right
-                anchors.rightMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                readonly property real bytes: FileOperations.busy, root.currentPath
-                                              ? Platform.freeSpace(root.currentPath) : -1
-                visible: !FileOperations.busy && bytes >= 0
-                text: qsTr("%1 free").arg(Platform.formatSize(bytes))
-                color: Colors.textDim
-                font.pixelSize: 11
-            }
-
-            Row {
-                anchors.right: parent.right
-                anchors.rightMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 10
-                visible: FileOperations.busy
-
-                ProgressBar {
-                    width: 160
-                    anchors.verticalCenter: parent.verticalCenter
-                    from: 0
-                    to: 1
-                    value: FileOperations.progress
-                    indeterminate: FileOperations.progress <= 0
-                }
-
-                Text {
-                    textFormat: Text.PlainText
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: qsTr("Cancel")
-                    color: cancelMouse.containsMouse ? Colors.text : Colors.accent
-                    font.pixelSize: 11
-
-                    MouseArea {
-                        id: cancelMouse
-                        anchors.fill: parent
-                        anchors.margins: -6
-                        hoverEnabled: true
-                        onClicked: FileOperations.cancel()
                     }
                 }
             }
@@ -1196,6 +1235,7 @@ Window {
         case "search": openSearch(); break;
         case "selectPattern": askSelectPattern(); break;
         case "help": shortcutsDialog.open(); break;
+        case "palette": openPalette(arg || ""); break;
         case "info": toggleInfoPanel(); break;
         case "pip":
             if (quickView.open)
@@ -1223,6 +1263,67 @@ Window {
     }
 
     function toggleInfoPanel() { Settings.showInfoPanel = !Settings.showInfoPanel; }
+
+    // ---- palette ----------------------------------------------------------
+
+    Commands {
+        id: commands
+        win: root
+    }
+
+    CommandPalette {
+        id: commandPalette
+        win: root
+        registry: commands
+    }
+
+    readonly property bool paletteOpen: commandPalette.opened
+    readonly property int currentTabIndex: stack.currentIndex
+
+    // The status line's mode, Vim-style: what the keyboard is talking to.
+    readonly property string mode: {
+        if (paletteOpen)
+            return "COMMAND";
+        if (pathBar.editing)
+            return "PATH";
+        if (searchOpen)
+            return "SEARCH";
+        if (quickView.open)
+            return "PREVIEW";
+        if (currentTab && currentTab.filterEditing)
+            return "FILTER";
+        if (currentTab && currentTab.selectionCount > 1)
+            return "VISUAL";
+        return "NORMAL";
+    }
+
+    function openPalette(prefix) {
+        if (commandPalette.opened)
+            commandPalette.setMode(prefix || "");
+        else
+            commandPalette.openWith(prefix || "");
+    }
+
+    function editLocation() { pathBar.beginEditing(); }
+    function openPreferences() { preferencesDialog.open(); }
+    function openAbout() { aboutDialog.open(); }
+    function openVisibleColumns() { visibleColumnsDialog.open(); }
+
+    function sortBy(key, descending) {
+        if (!currentTab)
+            return;
+        currentTab.sortKey = key;
+        currentTab.sortDescending = descending;
+    }
+
+    // The sidebar's places for the palette's ~ mode, with the 1–9 jump keys.
+    function placeList() {
+        const vim = Settings.keyboardMode === "vim";
+        return sidebar.placeList().map((p, i) => ({
+            name: p.name, location: p.location,
+            key: vim && i < 9 ? String(i + 1) : ""
+        }));
+    }
 
     // Ctrl+Shift+D / vim Y: a copy beside each selected item, "name (copy)".
     // The copy's own rename-on-conflict naming does the work; grouped by
@@ -1815,7 +1916,7 @@ Window {
         }
 
         OmMenuItem {
-            text: qsTr("About Files")
+            text: qsTr("About Rook")
             glyph: "info"
             onTriggered: aboutDialog.open()
         }
@@ -2758,6 +2859,8 @@ Window {
     Shortcut { sequence: "Ctrl+I"; onActivated: root.showProperties() }
     Shortcut { sequence: "Alt+Return"; onActivated: root.showProperties() }
 
+    Shortcut { sequence: "Ctrl+Shift+P"; onActivated: root.openPalette("") }
+    Shortcut { sequence: "F1"; onActivated: root.openPalette("") }
     Shortcut { sequence: "Ctrl+,"; onActivated: preferencesDialog.open() }
     Shortcut { sequence: "Ctrl+?"; onActivated: shortcutsDialog.open() }
 

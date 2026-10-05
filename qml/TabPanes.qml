@@ -86,7 +86,7 @@ FocusScope {
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: visible ? 26 : 0
+                Layout.preferredHeight: visible ? 20 : 0
                 visible: slot.split
                 color: Colors.chrome
 
@@ -99,7 +99,8 @@ FocusScope {
                     anchors.verticalCenter: parent.verticalCenter
                     text: cell.tab.title
                     color: cell.isActive ? Colors.text : Colors.textDim
-                    font.pixelSize: 12
+                    font.pixelSize: 11
+                    font.bold: cell.isActive
                     elide: Text.ElideMiddle
                 }
 
@@ -129,6 +130,25 @@ FocusScope {
             }
         }
 
+        // Tiling-WM focus while split: the active pane wears a ring in the
+        // accent, the other sits back under a veil. Neither takes input.
+        Rectangle {
+            anchors.fill: parent
+            z: 11
+            visible: slot.split && !cell.isActive
+            color: Qt.alpha(Colors.dark ? "black" : "white", 0.28)
+        }
+
+        Rectangle {
+            objectName: "paneFocusRing"
+            anchors.fill: parent
+            z: 11
+            visible: slot.split && cell.isActive
+            color: "transparent"
+            border.color: Colors.accent
+            border.width: 1
+        }
+
         // Any press in a pane makes it the one the chrome acts on, before
         // whatever was pressed handles the event. Declined presses fall
         // through untouched — clicks, drags and the rubber band never see
@@ -151,7 +171,7 @@ FocusScope {
 
         handle: Rectangle {
             id: splitHandle
-            implicitWidth: 5
+            implicitWidth: 3
             color: Colors.chrome
 
             Rectangle {

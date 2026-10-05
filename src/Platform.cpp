@@ -373,6 +373,32 @@ QString Platform::resolvePath(const QString &input, const QString &base) const
     return QDir::cleanPath(path);
 }
 
+QStringList Platform::completeFolder(const QString &input, const QString &base, int limit) const
+{
+    const QString typed = input.trimmed();
+    if (typed.isEmpty() || Location::isUri(typed) || limit <= 0)
+        return {};
+    // "~/Doc" completes in home, "src/" lists src itself.
+    const bool listInside = typed.endsWith(QLatin1Char('/')) || typed == QLatin1String("~");
+    const QString resolved = resolvePath(typed, base);
+    const QString dir = listInside ? resolved : QFileInfo(resolved).path();
+    const QString stem = listInside ? QString() : QFileInfo(resolved).fileName();
+
+    QDir::Filters filters = QDir::Dirs | QDir::NoDotAndDotDot;
+    if (stem.startsWith(QLatin1Char('.')))
+        filters |= QDir::Hidden;
+    QStringList matches;
+    const QStringList names = QDir(dir).entryList(filters, QDir::Name | QDir::IgnoreCase);
+    for (const QString &name : names) {
+        if (!name.startsWith(stem, Qt::CaseInsensitive))
+            continue;
+        matches.append(QDir(dir).filePath(name));
+        if (matches.size() >= limit)
+            break;
+    }
+    return matches;
+}
+
 QString Platform::uriList(const QStringList &locations) const
 {
     // text/uri-list is CRLF-separated URIs (RFC 2483). GFile does the

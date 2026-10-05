@@ -234,7 +234,7 @@ Item {
                 wrapMode: Text.Wrap
                 text: info.html
                 color: Colors.text
-                linkColor: Colors.accent
+                linkColor: Colors.text
                 font.pixelSize: Math.round((root.compact ? 12 : 14) * root.zoom)
             }
         }
@@ -292,7 +292,7 @@ Item {
                         anchors.rightMargin: 12
                         anchors.verticalCenter: parent.verticalCenter
                         text: (modelData.isDir ? "▸ " : "   ") + modelData.name
-                        color: modelData.isDir ? Colors.accent : Colors.text
+                        color: modelData.isDir ? Colors.folder : Colors.text
                         font.pixelSize: 12
                         elide: Text.ElideMiddle
                     }

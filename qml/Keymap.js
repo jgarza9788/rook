@@ -47,7 +47,8 @@ var vimGroups = [
         [".", "Show hidden files"],
         ["s", "Cycle sort: name › modified › size › type"],
         ["t / q", "New tab / close tab"],
-        ["?", "This list"]] }
+        ["?", "This list"],
+        [":", "Command palette"]] }
 ];
 
 var classicGroups = [
@@ -88,6 +89,11 @@ var classicGroups = [
         ["Shift", "Move"],
         ["Ctrl+Shift / Alt", "Create a link"],
         ["Rest on a folder", "It opens (spring-loaded; Preferences sets the delay)"]] },
+    { name: "Command palette", rows: [
+        ["Ctrl+Shift+P / F1", "Open the palette"],
+        ["/ ~ @ ? =", "Path, places, filter, search, calc (type first, or Tab)"],
+        ["Tab (in / mode)", "Complete the highlighted folder"],
+        ["↑ ↓ / Ctrl+J Ctrl+K", "Move"], ["Enter / Esc", "Run / close"]] },
     { name: "Application", rows: [
         ["Ctrl+,", "Preferences"], ["Ctrl+?", "Keyboard shortcuts"]] }
 ];

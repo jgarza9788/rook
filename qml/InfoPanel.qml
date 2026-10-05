@@ -92,7 +92,7 @@ Rectangle {
                     readonly property string icon: root.tab && root.row >= 0
                         ? root.tab.files.valueAt(root.row, "iconSource")
                         : "image://fileicon/folder"
-                    source: Colors.fileIcon(icon, root.isDir ? Colors.accent : Colors.textDim, 96)
+                    source: Colors.fileIcon(icon, root.isDir ? Colors.folder : Colors.textDim, 96)
                     sourceSize: Qt.size(96, 96)
                 }
             }

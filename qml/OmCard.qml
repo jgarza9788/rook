@@ -32,6 +32,6 @@ Item {
         radius: root.radius
         color: Qt.alpha(Colors.chrome, 1)
         border.width: root.borderWidth
-        border.color: Qt.alpha(Colors.accent, root.borderOpacity)
+        border.color: Qt.alpha(Colors.border, root.borderOpacity)
     }
 }

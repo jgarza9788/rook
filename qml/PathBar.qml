@@ -27,7 +27,7 @@ FocusScope {
         return "drive-harddisk";
     }
 
-    implicitHeight: 32
+    implicitHeight: 24
 
     function beginEditing() {
         editing = true;
@@ -43,10 +43,12 @@ FocusScope {
 
     Rectangle {
         anchors.fill: parent
-        radius: Colors.radius
-        color: Colors.window
-        border.color: root.editing ? Colors.accent : Colors.border
-        border.width: 1
+        // Bare text on the top line; a frame appears only while editing,
+        // in the accent, because the field then has the keyboard.
+        radius: 4
+        color: root.editing ? Colors.window : "transparent"
+        border.color: Colors.accent
+        border.width: root.editing ? 1 : 0
     }
 
     // GitHub #10: a click on the pill's empty space types a path, as in
@@ -117,17 +119,18 @@ FocusScope {
                     Text {
                         textFormat: Text.PlainText
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: index > 0
+                        // No separator after the root crumb, itself a "/".
+                        visible: index > 0 && crumbs.model[index - 1].label !== "/"
                         text: "/"
                         color: Colors.textDim
-                        font.pixelSize: 13
-                        leftPadding: 2
+                        font.pixelSize: 12
+                        leftPadding: 1
                         rightPadding: 2
                     }
 
                     Rectangle {
-                        height: 24
-                        width: crumbLabel.width + 14
+                        height: 20
+                        width: crumbLabel.width + 10
                         anchors.verticalCenter: parent.verticalCenter
                         radius: 4
                         color: crumbMouse.containsMouse ? Colors.hover : "transparent"
@@ -141,7 +144,8 @@ FocusScope {
                             // are; asking Platform again would re-walk the whole
                             // path once per crumb, on every re-evaluation.
                             color: index === crumbs.count - 1 ? Colors.text : Colors.textDim
-                            font.pixelSize: 13
+                            font.pixelSize: 12
+                            font.bold: index === crumbs.count - 1
                         }
 
                         MouseArea {
@@ -167,8 +171,8 @@ FocusScope {
         anchors.right: parent.right
         anchors.rightMargin: 5
         anchors.verticalCenter: parent.verticalCenter
-        width: 22
-        height: 24
+        width: 18
+        height: 20
         radius: 4
         visible: !root.editing
         color: kebabMouse.containsMouse ? Colors.hover : "transparent"
@@ -206,8 +210,11 @@ FocusScope {
         anchors.fill: parent
         visible: root.editing
         color: Colors.text
-        font.pixelSize: 13
-        leftPadding: 10
+        font.pixelSize: 12
+        font.family: Colors.mono
+        leftPadding: 8
+        topPadding: 0
+        bottomPadding: 0
         background: null
         selectByMouse: true
 

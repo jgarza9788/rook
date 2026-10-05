@@ -26,6 +26,9 @@ install -m755 "$ROOT/packaging/bin/rook-switch" "$ROOT/packaging/bin/rook-launch
 install -m644 "$ROOT/packaging/rook.desktop" "$PREFIX/share/applications/rook.desktop"
 install -m644 "$ROOT/packaging/rook.svg" \
   "$PREFIX/share/icons/hicolor/scalable/apps/rook.svg"
+mkdir -p "$PREFIX/share/icons/hicolor/symbolic/apps"
+install -m644 "$ROOT/packaging/rook-symbolic.svg" \
+  "$PREFIX/share/icons/hicolor/symbolic/apps/rook-symbolic.svg"
 
 # Actions are yours to edit once installed, so never overwrite an existing one.
 for action in "$ROOT"/packaging/actions/*.toml; do

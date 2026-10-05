@@ -12,7 +12,7 @@ Item {
 
     property alias currentIndex: view.currentIndex
     readonly property int iconSize: root.tab.zoom
-    readonly property int rowHeight: Math.max(Colors.rowHeight, iconSize + 12)
+    readonly property int rowHeight: Math.max(Colors.rowHeight, iconSize + 6)
 
     // Label, sort key and width per column id. Width 0 marks the flex column.
     readonly property var columnMeta: ({
@@ -113,7 +113,7 @@ Item {
                                 textFormat: Text.PlainText
                                 visible: root.tab.sortKey === meta.sortKey
                                 text: root.tab.sortDescending ? "▾" : "▴"
-                                color: Colors.accent
+                                color: Colors.text
                                 font.pixelSize: 10
                                 anchors.verticalCenter: parent.verticalCenter
                             }
@@ -235,7 +235,7 @@ Item {
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: row.expanded ? "▾" : "▸"
-                                    color: row.expanded ? Colors.accent : Colors.textDim
+                                    color: Colors.textDim
                                     font.pixelSize: 10
                                 }
                             }
@@ -263,7 +263,7 @@ Item {
                                 source: wantThumbnail ? thumbnailSource
                                                       : Colors.fileIcon(row.iconSource,
                                                             root.tab.isSelected(row.name) ? Colors.selectionText
-                                                          : row.isDir ? Colors.accent
+                                                          : row.isDir ? Colors.folder
                                                           : Colors.textDim, root.iconSize)
                                 sourceSize: Qt.size(root.iconSize, root.iconSize)
                                 asynchronous: true
@@ -298,9 +298,17 @@ Item {
                             width: root.columnMeta[modelData].width
                             height: parent.height
                             verticalAlignment: Text.AlignVCenter
+                            // Numbers line up: sizes, counts, modes and
+                            // dates in monospace, sizes flush right.
+                            readonly property bool numeric: modelData !== "type"
+                                                            && modelData !== "owner"
+                                                            && modelData !== "group"
                             text: root.cellText(modelData, row)
                             color: Colors.textDim
-                            font.pixelSize: 12
+                            font.pixelSize: numeric ? 11 : 12
+                            font.family: numeric ? Colors.mono : font.family
+                            horizontalAlignment: modelData === "size" ? Text.AlignRight : Text.AlignLeft
+                            rightPadding: modelData === "size" ? 16 : 0
                             elide: Text.ElideRight
                         }
                     }
@@ -362,7 +370,7 @@ Item {
                                     : [root.tab.viewingRecent && row.targetPath !== ""
                                        ? row.targetPath : row.filePath];
                         dragProxy.prepare(paths, row.displayName, rowPreview.source,
-                            Colors.fileIcon(row.iconSource, row.isDir ? Colors.accent : Colors.textDim, 36));
+                            Colors.fileIcon(row.iconSource, row.isDir ? Colors.folder : Colors.textDim, 36));
                     }
 
                     onClicked: mouse => {
