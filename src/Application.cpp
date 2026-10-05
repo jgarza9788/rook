@@ -17,7 +17,7 @@
 
 namespace {
 
-constexpr const char *kWindowUrl = "qrc:/qt/qml/Omanta/qml/Main.qml";
+constexpr const char *kWindowUrl = "qrc:/qt/qml/Rook/qml/Main.qml";
 
 } // namespace
 
@@ -25,7 +25,7 @@ Application::Application(QQmlApplicationEngine *engine, QObject *parent)
     : QObject(parent)
     , m_engine(engine)
 {
-    // A quit with windows still up (logout, `omanta --quit` one day): all of
+    // A quit with windows still up (logout, `rook --quit` one day): all of
     // them are the session. Closing the last window saves it in
     // windowClosed() instead, before this runs with none left.
     connect(qApp, &QCoreApplication::aboutToQuit, this, [this] {
@@ -66,7 +66,7 @@ QObject *Application::createWindow(const QString &path, const QString &selectNam
     QQmlComponent component(m_engine, QUrl(QLatin1String(kWindowUrl)));
     if (component.isError()) {
         for (const QQmlError &error : component.errors())
-            qCritical("omanta: %s", qUtf8Printable(error.toString()));
+            qCritical("rook: %s", qUtf8Printable(error.toString()));
         return nullptr;
     }
 
@@ -79,7 +79,7 @@ QObject *Application::createWindow(const QString &path, const QString &selectNam
 
     QObject *window = component.createWithInitialProperties(initial);
     if (!window) {
-        qCritical("omanta: could not create window");
+        qCritical("rook: could not create window");
         return nullptr;
     }
 
@@ -134,7 +134,7 @@ void Application::openPaths(const QStringList &paths, bool newWindow)
 
         // Without --new-window, a location that is already on screen is raised
         // rather than duplicated. This is what Nautilus does, and why running
-        // `omanta ~/Projects` twice doesn't leave you with two identical
+        // `rook ~/Projects` twice doesn't leave you with two identical
         // windows to tidy up.
         if (!newWindow) {
             if (QObject *existing = windowShowing(folder)) {

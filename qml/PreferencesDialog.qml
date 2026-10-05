@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // Nautilus's Preferences dialog, over the Settings store. Every Nautilus
 // row now has its feature; nothing is deliberately absent.
@@ -268,13 +268,13 @@ OmDialog {
                 visible: DefaultFileManager.available
                 text: DefaultFileManager.lastError !== ""
                       ? DefaultFileManager.lastError
-                      : qsTr("Open folders, downloads and Super+Shift+F in Omanta instead of Nautilus. Switch back at any time.")
+                      : qsTr("Open folders, downloads and Super+Shift+F in Rook instead of Nautilus. Switch back at any time.")
                 color: DefaultFileManager.lastError !== "" ? Colors.error : Colors.textDim
             }
 
             PrefRow {
                 visible: DefaultFileManager.available
-                label: qsTr("Use Omanta as the Default")
+                label: qsTr("Use Rook as the Default")
                 PrefSwitch {
                     id: defaultSwitch
                     enabled: DefaultFileManager.known && !DefaultFileManager.busy

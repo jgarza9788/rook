@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
-// omanta's menus: a theme-coloured card with a thin accent frame — the same
+// rook's menus: a theme-coloured card with a thin accent frame — the same
 // language as an Omarchy/Hyprland window border — a soft shadow, and a quick
 // fade-and-settle on open (closing is instant). Entries are OmMenuItem; submenu rows get one too.
 Menu {

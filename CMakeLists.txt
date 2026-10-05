@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(omanta VERSION 0.1.23 LANGUAGES CXX)
+project(rook VERSION 0.1.23 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,13 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick QuickControls2 DBus Svg)
 # The quick view plays audio/video and pages through PDFs when these are
 # installed (qt6-multimedia, qt6-webengine on Arch); without them those types
-# fall back to an info card. Off by -DOMANTA_WITH_MEDIA/PDF=OFF.
-option(OMANTA_WITH_MEDIA "Audio/video in the quick view (Qt Multimedia)" ON)
-option(OMANTA_WITH_PDF "PDF pages in the quick view (Qt Pdf)" ON)
-if(OMANTA_WITH_MEDIA)
+# fall back to an info card. Off by -DROOK_WITH_MEDIA/PDF=OFF.
+option(ROOK_WITH_MEDIA "Audio/video in the quick view (Qt Multimedia)" ON)
+option(ROOK_WITH_PDF "PDF pages in the quick view (Qt Pdf)" ON)
+if(ROOK_WITH_MEDIA)
     find_package(Qt6 6.5 QUIET COMPONENTS Multimedia)
 endif()
-if(OMANTA_WITH_PDF)
+if(ROOK_WITH_PDF)
     find_package(Qt6 6.5 QUIET COMPONENTS Pdf PdfQuick)
 endif()
 find_package(PkgConfig REQUIRED)
@@ -25,7 +25,7 @@ pkg_check_modules(TINYSPARQL REQUIRED IMPORTED_TARGET tinysparql-3.0)
 qt_standard_project_setup(REQUIRES 6.5)
 qt_policy(SET QTP0004 NEW)
 
-set(OMANTA_SOURCES
+set(ROOK_SOURCES
     src/Application.cpp
     src/Application.h
     src/Applications.cpp
@@ -97,7 +97,7 @@ set(OMANTA_SOURCES
 
 set_source_files_properties(qml/Colors.qml qml/DragState.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
-set(OMANTA_QML_FILES
+set(ROOK_QML_FILES
     qml/Main.qml
     qml/Tab.qml
     qml/TabPanes.qml
@@ -144,31 +144,31 @@ set(OMANTA_QML_FILES
     qml/FileDropArea.qml
 )
 
-set(OMANTA_OPTIONAL_DEFINITIONS)
+set(ROOK_OPTIONAL_DEFINITIONS)
 if(Qt6Multimedia_FOUND)
-    list(APPEND OMANTA_QML_FILES qml/QuickViewMedia.qml)
-    list(APPEND OMANTA_OPTIONAL_DEFINITIONS OMANTA_HAVE_MULTIMEDIA)
+    list(APPEND ROOK_QML_FILES qml/QuickViewMedia.qml)
+    list(APPEND ROOK_OPTIONAL_DEFINITIONS ROOK_HAVE_MULTIMEDIA)
 endif()
 if(Qt6PdfQuick_FOUND)
-    list(APPEND OMANTA_QML_FILES qml/QuickViewPdf.qml)
-    list(APPEND OMANTA_OPTIONAL_DEFINITIONS OMANTA_HAVE_PDF)
+    list(APPEND ROOK_QML_FILES qml/QuickViewPdf.qml)
+    list(APPEND ROOK_OPTIONAL_DEFINITIONS ROOK_HAVE_PDF)
 endif()
-message(STATUS "omanta quick view: media=${Qt6Multimedia_FOUND} pdf=${Qt6PdfQuick_FOUND}")
+message(STATUS "rook quick view: media=${Qt6Multimedia_FOUND} pdf=${Qt6PdfQuick_FOUND}")
 
-qt_add_executable(omanta src/main.cpp ${OMANTA_SOURCES})
-qt_add_qml_module(omanta URI Omanta VERSION 1.0 QML_FILES ${OMANTA_QML_FILES})
+qt_add_executable(rook src/main.cpp ${ROOK_SOURCES})
+qt_add_qml_module(rook URI Rook VERSION 1.0 QML_FILES ${ROOK_QML_FILES})
 
 # GIO's gdbusintrospection.h declares a struct member named `signals`, which
 # Qt's unprefixed keyword macros turn into a syntax error. Any Qt+GIO project
 # must drop the unprefixed keywords and use Q_SIGNALS/Q_SLOTS/Q_EMIT.
-target_compile_definitions(omanta PRIVATE QT_NO_KEYWORDS ${OMANTA_OPTIONAL_DEFINITIONS})
+target_compile_definitions(rook PRIVATE QT_NO_KEYWORDS ${ROOK_OPTIONAL_DEFINITIONS})
 
 # Qt generates a type-registration file that includes each QML_ELEMENT header
 # by bare name (<DirectoryModel.h>), so src/ has to be on the include path or
 # the registrations silently compile to nothing.
-target_include_directories(omanta PRIVATE src)
+target_include_directories(rook PRIVATE src)
 
-set(OMANTA_LIBRARIES
+set(ROOK_LIBRARIES
     Qt6::Core
     Qt6::Gui
     Qt6::Quick
@@ -180,35 +180,35 @@ set(OMANTA_LIBRARIES
     PkgConfig::TINYSPARQL
 )
 if(Qt6Multimedia_FOUND)
-    list(APPEND OMANTA_LIBRARIES Qt6::Multimedia)
+    list(APPEND ROOK_LIBRARIES Qt6::Multimedia)
 endif()
 if(Qt6PdfQuick_FOUND)
-    list(APPEND OMANTA_LIBRARIES Qt6::Pdf Qt6::PdfQuick)
+    list(APPEND ROOK_LIBRARIES Qt6::Pdf Qt6::PdfQuick)
 endif()
 
-target_link_libraries(omanta PRIVATE ${OMANTA_LIBRARIES})
+target_link_libraries(rook PRIVATE ${ROOK_LIBRARIES})
 
-option(OMANTA_BUILD_TESTS "Build the model test suite" ON)
-if(OMANTA_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
+option(ROOK_BUILD_TESTS "Build the model test suite" ON)
+if(ROOK_BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
     find_package(Qt6 6.5 REQUIRED COMPONENTS Test)
     enable_testing()
     # Exercise the real QML and generated type registrations in a separate
     # executable, using the same source lists as the application.
-    qt_add_executable(tst_qmlviews tests/tst_qmlviews.cpp ${OMANTA_SOURCES})
-    qt_add_qml_module(tst_qmlviews URI Omanta VERSION 1.0
-        OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/qml/Omanta
-        QML_FILES ${OMANTA_QML_FILES})
-    target_compile_definitions(tst_qmlviews PRIVATE QT_NO_KEYWORDS ${OMANTA_OPTIONAL_DEFINITIONS})
+    qt_add_executable(tst_qmlviews tests/tst_qmlviews.cpp ${ROOK_SOURCES})
+    qt_add_qml_module(tst_qmlviews URI Rook VERSION 1.0
+        OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/qml/Rook
+        QML_FILES ${ROOK_QML_FILES})
+    target_compile_definitions(tst_qmlviews PRIVATE QT_NO_KEYWORDS ${ROOK_OPTIONAL_DEFINITIONS})
     target_include_directories(tst_qmlviews PRIVATE src)
-    target_link_libraries(tst_qmlviews PRIVATE ${OMANTA_LIBRARIES})
+    target_link_libraries(tst_qmlviews PRIVATE ${ROOK_LIBRARIES})
     add_subdirectory(tests)
 endif()
 
-install(TARGETS omanta RUNTIME DESTINATION bin)
-install(FILES LICENSE DESTINATION share/licenses/omanta)
-install(FILES packaging/omanta.desktop DESTINATION share/applications)
-install(FILES packaging/omanta.svg DESTINATION share/icons/hicolor/scalable/apps)
-install(DIRECTORY packaging/actions/ DESTINATION share/omanta/actions FILES_MATCHING PATTERN "*.toml")
-install(PROGRAMS packaging/bin/omanta-dropbox-link DESTINATION bin)
-install(PROGRAMS packaging/bin/omanta-switch packaging/bin/omanta-launch
-        packaging/bin/omanta-launch-cwd DESTINATION bin)
+install(TARGETS rook RUNTIME DESTINATION bin)
+install(FILES LICENSE DESTINATION share/licenses/rook)
+install(FILES packaging/rook.desktop DESTINATION share/applications)
+install(FILES packaging/rook.svg DESTINATION share/icons/hicolor/scalable/apps)
+install(DIRECTORY packaging/actions/ DESTINATION share/rook/actions FILES_MATCHING PATTERN "*.toml")
+install(PROGRAMS packaging/bin/rook-dropbox-link DESTINATION bin)
+install(PROGRAMS packaging/bin/rook-switch packaging/bin/rook-launch
+        packaging/bin/rook-launch-cwd DESTINATION bin)

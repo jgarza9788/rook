@@ -8,8 +8,8 @@
 class QFileSystemWatcher;
 
 // User preferences — Nautilus's Preferences dialog, persisted the house way:
-// a plain watched file (~/.config/omanta/settings, key=value per line,
-// OMANTA_SETTINGS_FILE overrides for tests), not gsettings. Defaults match
+// a plain watched file (~/.config/rook/settings, key=value per line,
+// ROOK_SETTINGS_FILE overrides for tests), not gsettings. Defaults match
 // Omarchy's out-of-the-box Nautilus, which is GNOME schema defaults — that is
 // the parity contract, not this machine's dconf.
 //
@@ -44,7 +44,7 @@ class Settings : public QObject
     // writes this the same way.
     Q_PROPERTY(QString defaultViewMode READ defaultViewMode WRITE setDefaultViewMode NOTIFY changed)
     // Nautilus's show-hidden-files: Ctrl+H flips it and it sticks across
-    // restarts (key "showHiddenFiles" in ~/.config/omanta/settings).
+    // restarts (key "showHiddenFiles" in ~/.config/rook/settings).
     Q_PROPERTY(bool showHiddenFiles READ showHiddenFiles WRITE setShowHiddenFiles NOTIFY changed)
     // The sidebar in a wide window: F9 flips it and it sticks (Nautilus's
     // start-with-sidebar). A narrow window hides it regardless.
@@ -71,7 +71,7 @@ class Settings : public QObject
     // Keyboard: "vim" (hjkl, g/G, / filter — the Omarchy-plugin keys) or
     // "classic" (Nautilus type-ahead). Ctrl/Alt/F-key shortcuts work in both.
     Q_PROPERTY(QString keyboardMode READ keyboardMode WRITE setKeyboardMode NOTIFY changed)
-    // Space: omanta's own quick view ("builtin") or Sushi over D-Bus.
+    // Space: rook's own quick view ("builtin") or Sushi over D-Bus.
     Q_PROPERTY(QString previewer READ previewer WRITE setPreviewer NOTIFY changed)
     // Reopen the last windows and tabs on a plain launch.
     Q_PROPERTY(bool restoreSession READ restoreSession WRITE setRestoreSession NOTIFY changed)

@@ -8,7 +8,7 @@
 // Resolves "image://fileicon/<name1>,<name2>,…" two ways:
 //
 // With a tint ("…?c=rrggbb", appended via Colors.tint() in QML), the GIO
-// icon-name candidates map onto omanta's own glyph set. The sidebar and
+// icon-name candidates map onto rook's own glyph set. The sidebar and
 // chrome use monochrome symbols; "&style=content" adds two-tone folders
 // and special-folder emblems in file views. All colours derive from the
 // supplied theme/selection colour. The URL carries the style and colour,

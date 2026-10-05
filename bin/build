@@ -1,17 +1,17 @@
 #!/usr/bin/env sh
-# Configure and build omanta into build/. Extra arguments go to the build step,
+# Configure and build rook into build/. Extra arguments go to the build step,
 # e.g. `./bin/build --target tst_theme`.
 #
-# OMANTA_BUILD_TYPE=Release ./bin/build  for a release-flavoured local build;
+# ROOK_BUILD_TYPE=Release ./bin/build  for a release-flavoured local build;
 # the shipped package builds from the release tag through packaging/PKGBUILD.
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 BUILD_DIR="$ROOT/build"
-BUILD_TYPE="${OMANTA_BUILD_TYPE:-Debug}"
+BUILD_TYPE="${ROOK_BUILD_TYPE:-Debug}"
 
 if ! command -v cmake >/dev/null 2>&1; then
-  echo "cmake is required to build omanta." >&2
+  echo "cmake is required to build rook." >&2
   exit 1
 fi
 
@@ -25,4 +25,4 @@ fi
 
 cmake --build "$BUILD_DIR" "$@"
 
-echo "Built $BUILD_DIR/omanta ($BUILD_TYPE)"
+echo "Built $BUILD_DIR/rook ($BUILD_TYPE)"

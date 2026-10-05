@@ -50,7 +50,7 @@ private:
 
 void TestStarred::initTestCase()
 {
-    qputenv("OMANTA_STARRED_FILE",
+    qputenv("ROOK_STARRED_FILE",
             QDir(m_dir.path()).filePath(QStringLiteral("starred")).toUtf8());
 }
 

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // One tab slot: a single Tab, or two side by side while split view (F3) is
 // on. The window's chrome talks to `activePane` — whichever pane last took a

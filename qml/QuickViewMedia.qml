@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtMultimedia
-import Omanta.Runtime
+import Rook.Runtime
 
 // Audio and video in the quick view (built only with Qt Multimedia). Starts
 // playing at once; Space pauses, ←/→ (h/l) seek 5 s, Esc closes the preview.

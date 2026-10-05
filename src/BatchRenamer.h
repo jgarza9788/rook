@@ -15,7 +15,7 @@
 // The tag strings are Nautilus's exactly ("[1, 2, 3]", "[Original file
 // name]"…), because the dialog is a parity item. Metadata tags (Creation
 // Date, Track Number…) are a deliberate divergence: they come from tracker,
-// which omanta does not depend on.
+// which rook does not depend on.
 class BatchRenamer : public QObject
 {
     Q_OBJECT

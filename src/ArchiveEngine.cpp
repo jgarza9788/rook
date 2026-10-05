@@ -320,7 +320,7 @@ bool compress(const QStringList &sources, const QString &archivePath, QString *e
         return false;
     }
 
-    QTemporaryDir staging(QFileInfo(archivePath).absolutePath() + "/.omanta-compress-XXXXXX");
+    QTemporaryDir staging(QFileInfo(archivePath).absolutePath() + "/.rook-compress-XXXXXX");
     QFile output(staging.filePath(QStringLiteral("archive")));
     if (!staging.isValid() || !output.open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
         *error = QStringLiteral("Could not create the archive");
@@ -414,7 +414,7 @@ bool extract(const QString &archivePath, const QString &destinationDir, QString 
     // Everything lands in a hidden staging directory first: a failed or
     // hostile archive leaves nothing visible behind, and the landing rule can
     // look at what actually came out rather than trusting the entry list.
-    QTemporaryDir stagingDir(QDir(destinationDir).filePath(QStringLiteral(".omanta-extract-XXXXXX")));
+    QTemporaryDir stagingDir(QDir(destinationDir).filePath(QStringLiteral(".rook-extract-XXXXXX")));
     const QString staging = stagingDir.path();
     if (!stagingDir.isValid()) {
         *error = QStringLiteral("Could not write to “%1”")

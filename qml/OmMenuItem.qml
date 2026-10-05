@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // One menu row: an icon (a flat glyph from the icon provider, or an app's own
 // icon), the label, and its shortcut in the current keyboard mode. Hover and

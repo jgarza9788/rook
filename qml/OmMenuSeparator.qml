@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // A hairline between menu groups, inset from the card's edges.
 MenuSeparator {

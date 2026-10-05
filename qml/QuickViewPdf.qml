@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Pdf
-import Omanta.Runtime
+import Rook.Runtime
 
 // PDF pages in the quick view (built only with Qt Pdf). Scrolls with the
 // wheel; the quick view's +/- zoom does not apply — the page view keeps its

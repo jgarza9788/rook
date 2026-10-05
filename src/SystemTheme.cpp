@@ -183,7 +183,7 @@ QString SystemTheme::themeColorsPath() const
 {
     // Test override first; otherwise where omarchy-theme-set materializes the
     // active theme. GenericStateLocation honours XDG_STATE_HOME.
-    const QString override = qEnvironmentVariable("OMANTA_COLORS_FILE");
+    const QString override = qEnvironmentVariable("ROOK_COLORS_FILE");
     if (!override.isEmpty())
         return override;
 

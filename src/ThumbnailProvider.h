@@ -15,7 +15,7 @@
 // The payoff for following the spec is a *shared* cache: thumbnails other
 // applications already generated show up instantly here, and the ones generated
 // here show up in them. On this system that means ffmpegthumbnailer, evince and
-// glycin do the work for video, PDF and HEIF/JXL/SVG, and omanta only has to
+// glycin do the work for video, PDF and HEIF/JXL/SVG, and rook only has to
 // find and cache the results.
 //
 // Generation runs on a thread pool. The icon provider deliberately does not —

@@ -10,8 +10,8 @@ class QFileSystemWatcher;
 // User-defined context-menu actions — the replacement for the three
 // nautilus-python extensions (transcode, omarchy-send, localsend).
 //
-// An action is one TOML file in /usr/share/omanta/actions (shipped) or
-// ~/.config/omanta/actions (user; a user file with the same name overrides
+// An action is one TOML file in /usr/share/rook/actions (shipped) or
+// ~/.config/rook/actions (user; a user file with the same name overrides
 // the shipped one). The whole surface:
 //
 //   name = "Transcode"                    # menu label (required)

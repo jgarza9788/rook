@@ -98,7 +98,7 @@ bool launch(const QString &applicationId, const QString &contentType,
     GError *error = nullptr;
     const bool ok = g_app_info_launch(application, files, nullptr, &error);
     if (!ok) {
-        qWarning("omanta: could not launch %s: %s", qUtf8Printable(applicationId),
+        qWarning("rook: could not launch %s: %s", qUtf8Printable(applicationId),
                  error ? error->message : "unknown");
     }
     g_clear_error(&error);

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // The built-in quick view (Space): a preview drawn inside the window, so
 // nothing has to start — the next file is a keypress away, not a process

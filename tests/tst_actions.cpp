@@ -73,7 +73,7 @@ QString TestUserActions::touchExecutable(const QString &name)
 
 void TestUserActions::initTestCase()
 {
-    qputenv("OMANTA_ACTIONS_DIR", m_dir.path().toUtf8());
+    qputenv("ROOK_ACTIONS_DIR", m_dir.path().toUtf8());
     qputenv("PATH", (m_bin.path() + QLatin1Char(':')
                      + qEnvironmentVariable("PATH")).toUtf8());
 
@@ -264,7 +264,7 @@ void TestUserActions::terminalActionsWrapIntoOneShellCommand()
 
 void TestUserActions::userDirOverridesById()
 {
-    // With OMANTA_ACTIONS_DIR there is only one dir, so this exercises the
+    // With ROOK_ACTIONS_DIR there is only one dir, so this exercises the
     // by-id override the two real dirs rely on: a later parse of the same id
     // replaces the earlier one.
     touchExecutable("override-tool");

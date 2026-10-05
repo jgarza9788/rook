@@ -19,7 +19,7 @@ constexpr auto kProperties = "org.freedesktop.DBus.Properties";
 
 Previewer::Previewer(QObject *parent)
     : QObject(parent)
-    , m_service(qEnvironmentVariable("OMANTA_PREVIEWER_SERVICE",
+    , m_service(qEnvironmentVariable("ROOK_PREVIEWER_SERVICE",
                                      QStringLiteral("org.gnome.NautilusPreviewer")))
 {
     QDBusConnection bus = QDBusConnection::sessionBus();

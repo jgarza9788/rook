@@ -37,7 +37,7 @@ public:
     // The user's document templates (XDG Templates dir), each a {name, path}
     // map, name-sorted; empty when the dir is missing, empty, or disabled
     // (XDG defines "equals $HOME" as disabled). Feeds the context menu's
-    // New Document submenu. OMANTA_TEMPLATES_DIR overrides (tests).
+    // New Document submenu. ROOK_TEMPLATES_DIR overrides (tests).
     Q_INVOKABLE QVariantList templates() const;
 
     // Whether "Extract Here" applies — the content types the archive engine
@@ -68,7 +68,7 @@ public:
     // Ctrl-means-copy has to be read at the moment of the drop.
     Q_INVOKABLE int keyboardModifiers() const;
 
-    // Human-readable size using GLib's formatter, so omanta and every GTK
+    // Human-readable size using GLib's formatter, so rook and every GTK
     // app on the system agree on what "1.2 MB" means.
     // A name too long for `lines` wrapped lines of `width` px at `pixelSize`
     // (the app font), shortened Finder-style: the start, "…", the end — so

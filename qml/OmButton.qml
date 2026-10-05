@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // A dialog or panel button in the theme. In a button box its role decides
 // the look: the accepting action filled with the accent, a destructive one

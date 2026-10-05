@@ -16,17 +16,17 @@ QString configHome()
 
 QString findSwitcher()
 {
-    // OMANTA_SWITCH points the tests at the source tree's copy.
-    const QString forced = qEnvironmentVariable("OMANTA_SWITCH");
+    // ROOK_SWITCH points the tests at the source tree's copy.
+    const QString forced = qEnvironmentVariable("ROOK_SWITCH");
     if (!forced.isEmpty())
         return QFileInfo(forced).isExecutable() ? forced : QString();
 
     // Installed beside the binary by the package and by bin/install; PATH
     // covers anything else.
-    const QString sibling = QCoreApplication::applicationDirPath() + QStringLiteral("/omanta-switch");
+    const QString sibling = QCoreApplication::applicationDirPath() + QStringLiteral("/rook-switch");
     if (QFileInfo(sibling).isExecutable())
         return sibling;
-    return QStandardPaths::findExecutable(QStringLiteral("omanta-switch"));
+    return QStandardPaths::findExecutable(QStringLiteral("rook-switch"));
 }
 
 } // namespace
@@ -48,9 +48,9 @@ void DefaultFileManager::refresh()
     run({ QStringLiteral("status") });
 }
 
-void DefaultFileManager::setDefault(bool omanta)
+void DefaultFileManager::setDefault(bool rook)
 {
-    run({ omanta ? QStringLiteral("omanta") : QStringLiteral("nautilus") });
+    run({ rook ? QStringLiteral("rook") : QStringLiteral("nautilus") });
     refresh();
 }
 
@@ -99,7 +99,7 @@ void DefaultFileManager::startNext()
         process->deleteLater();
 
         if (status != QProcess::NormalExit || code != 0) {
-            m_lastError = errors.isEmpty() ? tr("omanta-switch %1 failed").arg(arguments.join(QLatin1Char(' ')))
+            m_lastError = errors.isEmpty() ? tr("rook-switch %1 failed").arg(arguments.join(QLatin1Char(' ')))
                                            : errors;
             Q_EMIT statusChanged();
         } else if (arguments.first() == QLatin1String("status")) {
@@ -117,7 +117,7 @@ void DefaultFileManager::startNext()
         m_process->deleteLater();
         m_process = nullptr;
         m_queue.clear();
-        m_lastError = tr("Could not run omanta-switch");
+        m_lastError = tr("Could not run rook-switch");
         Q_EMIT statusChanged();
         setBusy(false);
     });
@@ -136,7 +136,7 @@ void DefaultFileManager::setBusy(bool busy)
 
 void DefaultFileManager::parseStatus(const QString &output)
 {
-    // "key : value" lines; see omanta-switch's status().
+    // "key : value" lines; see rook-switch's status().
     bool isDefault = false;
     bool menu = false;
     for (const QString &line : output.split(QLatin1Char('\n'))) {
@@ -146,7 +146,7 @@ void DefaultFileManager::parseStatus(const QString &output)
         const QString key = line.left(colon).trimmed();
         const QString value = line.mid(colon + 1).trimmed();
         if (key == QLatin1String("inode/directory default"))
-            isDefault = value == QLatin1String("omanta.desktop");
+            isDefault = value == QLatin1String("rook.desktop");
         else if (key == QLatin1String("Toggle-menu entry"))
             menu = value == QLatin1String("installed");
     }

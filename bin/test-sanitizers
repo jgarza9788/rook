@@ -2,7 +2,7 @@
 # Instrument application code and tests; arguments are forwarded to ctest.
 set -eu
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-SANITIZER_BUILD="${OMANTA_SANITIZER_BUILD:-$ROOT/build/sanitizers}"
+SANITIZER_BUILD="${ROOK_SANITIZER_BUILD:-$ROOT/build/sanitizers}"
 cmake -S "$ROOT" -B "$SANITIZER_BUILD" -G Ninja \
     -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_COMPILER=clang++ \
     '-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' \

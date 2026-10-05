@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // A tab in a dialog's tab bar: plain text, the chosen one in the accent with
 // an accent underline that slides in — no stock grey blocks.

@@ -136,7 +136,7 @@ bool copyStaged(GFile *source, GFile *destination, bool replace, GCancellable *c
         g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "Destination has no parent");
         return false;
     }
-    const QByteArray name = (QStringLiteral(".omanta-copy-")
+    const QByteArray name = (QStringLiteral(".rook-copy-")
         + QUuid::createUuid().toString(QUuid::WithoutBraces)).toUtf8();
     GFile *staging = g_file_get_child(parent, name.constData());
     g_object_unref(parent);
@@ -438,7 +438,7 @@ bool FileOperationWorker::doBatchRename(const FileOperationRequest &request,
             if (request.names.at(i) == oldNames.at(i))
                 continue; // already right; renaming would be a pointless failure risk
             const QString target = phase == 0
-                ? QStringLiteral(".omanta-batch-%1-%2").arg(id).arg(i)
+                ? QStringLiteral(".rook-batch-%1-%2").arg(id).arg(i)
                 : request.names.at(i);
             if (!renameTo(i, target)) {
                 if (!rollback())

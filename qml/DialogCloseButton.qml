@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // The ✕ in an information or settings dialog's top-right corner. Escape
 // alone was no way out for someone on the mouse (GitHub #6).

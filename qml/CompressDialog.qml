@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // Nautilus's "Compress Files and Folders": archive name, compression method
 // with its compatibility note, refused while the name is taken or invalid.

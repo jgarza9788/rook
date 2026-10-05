@@ -1,4 +1,4 @@
-// omanta — a file manager for Omarchy.
+// rook — a file manager for Omarchy.
 //
 // Single process, many windows, D-Bus activated: the same shape as Nautilus,
 // because anything else changes how the desktop's keybindings and "reveal in
@@ -31,8 +31,8 @@
 
 namespace {
 
-constexpr const char *kServiceName = "org.omarchy.omanta";
-constexpr const char *kServicePath = "/org/omarchy/omanta";
+constexpr const char *kServiceName = "org.omarchy.rook";
+constexpr const char *kServicePath = "/org/omarchy/rook";
 constexpr const char *kFileManager1Name = "org.freedesktop.FileManager1";
 constexpr const char *kFileManager1Path = "/org/freedesktop/FileManager1";
 
@@ -79,10 +79,10 @@ int main(int argc, char *argv[])
     QQuickWindow::setDefaultAlphaBuffer(true);
 
     QGuiApplication app(argc, argv);
-    app.setApplicationName(QStringLiteral("omanta"));
+    app.setApplicationName(QStringLiteral("rook"));
     app.setApplicationDisplayName(QStringLiteral("Files"));
     app.setOrganizationDomain(QStringLiteral("omarchy.org"));
-    app.setDesktopFileName(QStringLiteral("omanta"));
+    app.setDesktopFileName(QStringLiteral("rook"));
     app.setApplicationVersion(QStringLiteral("0.1.23"));
 
     QCommandLineParser parser;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
     }
 
     // Qt Quick's default distance-field text ignores fontconfig hinting and
-    // subpixel antialiasing, so omanta's labels read softer than every GTK
+    // subpixel antialiasing, so rook's labels read softer than every GTK
     // app beside it. Native rendering draws them the way the rest of the
     // desktop does.
     QQuickWindow::setTextRenderType(QQuickWindow::NativeTextRendering);
@@ -151,21 +151,21 @@ int main(int argc, char *argv[])
     Platform platform;
     SystemTheme systemTheme;
 
-    // Registered under their own URI, never into "Omanta". Mixing manual
+    // Registered under their own URI, never into "Rook". Mixing manual
     // registrations into a URI owned by qt_add_qml_module is unsupported, and
     // it fails silently: the module's own C++ types stop resolving in QML with
     // nothing more than "X is not a type" to go on.
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &systemTheme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &systemTheme);
 
     if (isPrimary) {
-        new OmantaAdaptor(&application);
+        new RookAdaptor(&application);
         session.registerObject(QLatin1String(kServicePath), &application);
 
         // FileManager1 is owned by whichever file manager got there first. If
         // Nautilus is running, we simply do not offer it — that is deliberate,
-        // so both can be installed side by side while omanta is on trial. We
+        // so both can be installed side by side while rook is on trial. We
         // do take the name over once its owner goes away, so closing the last
         // Nautilus window hands "open containing folder" back to us without a
         // restart.
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
         };
         if (!claimFileManager1()) {
             std::fprintf(stderr,
-                         "omanta: org.freedesktop.FileManager1 is already owned "
+                         "rook: org.freedesktop.FileManager1 is already owned "
                          "(Nautilus running?) — not claiming it until it is free\n");
             auto *watcher = new QDBusServiceWatcher(QLatin1String(kFileManager1Name), session,
                                                     QDBusServiceWatcher::WatchForUnregistration,

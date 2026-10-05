@@ -4,7 +4,7 @@
 # clipboard — same as running the menu item repeatedly.
 name = "Copy Dropbox Link"
 plural = "Copy %n Dropbox Links"
-command = "omanta-dropbox-link copy %f"
+command = "rook-dropbox-link copy %f"
 each = true
-requires = ["omanta-dropbox-link", "socat", "wl-copy"]
+requires = ["rook-dropbox-link", "socat", "wl-copy"]
 under = ["~/Dropbox"]

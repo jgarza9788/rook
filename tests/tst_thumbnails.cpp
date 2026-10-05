@@ -506,9 +506,9 @@ void TestThumbnails::thumbnailerRunsInTheSandbox()
     // see no session environment, no network but loopback and no home
     // directory. Writing beside its input lands in the sandbox's own tmpfs
     // (bwrap builds the input's parents there), never in the real folder.
-    qputenv("OMANTA_TEST_SECRET", "leaked");
+    qputenv("ROOK_TEST_SECRET", "leaked");
     const QString probe = QStringLiteral(
-        "[ -z \"$OMANTA_TEST_SECRET\" ] || exit 3; "
+        "[ -z \"$ROOK_TEST_SECRET\" ] || exit 3; "
         "[ \"$(grep -c : /proc/net/dev)\" -eq 1 ] || exit 4; "
         "[ ! -e \"$3\" ] || exit 5; "
         "touch \"$(dirname \"$1\")/escaped\" 2>/dev/null; "
@@ -517,7 +517,7 @@ void TestThumbnails::thumbnailerRunsInTheSandbox()
         { QStringLiteral("/bin/sh"), QStringLiteral("-c"), probe, QStringLiteral("sh"),
           QStringLiteral("%i"), QStringLiteral("%o"), QDir::homePath() },
         path, 128);
-    qunsetenv("OMANTA_TEST_SECRET");
+    qunsetenv("ROOK_TEST_SECRET");
 
     QVERIFY2(!thumb.isNull(), "the sandboxed thumbnailer failed one of its checks");
     QVERIFY(thumb.width() <= 128 && thumb.height() <= 128);

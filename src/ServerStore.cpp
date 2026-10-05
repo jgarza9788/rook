@@ -43,10 +43,10 @@ QString ServerStore::normalize(const QString &uri)
 
 QString ServerStore::filePath() const
 {
-    const QString override = qEnvironmentVariable("OMANTA_SERVERS_FILE");
+    const QString override = qEnvironmentVariable("ROOK_SERVERS_FILE");
     if (!override.isEmpty())
         return override;
-    return QDir::homePath() + QStringLiteral("/.config/omanta/servers");
+    return QDir::homePath() + QStringLiteral("/.config/rook/servers");
 }
 
 void ServerStore::load()

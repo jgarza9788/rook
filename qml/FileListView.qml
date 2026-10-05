@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // Detail view. Columns come from Settings (Visible Columns… in the
 // view-options menu); every header sorts. Name is always present and takes

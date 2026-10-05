@@ -127,10 +127,10 @@ void TestQmlViews::initTestCase()
     qputenv("XDG_CACHE_HOME", m_cache.path().toUtf8());
     // Every window offers the Omarchy Toggle-menu row on first launch; these
     // suites must never edit the real desktop's menu or bindings.
-    qputenv("OMANTA_SWITCH", "/nonexistent/omanta-switch");
+    qputenv("ROOK_SWITCH", "/nonexistent/rook-switch");
     // Space must never reach the real Sushi from a test run.
-    qputenv("OMANTA_PREVIEWER_SERVICE",
-            QByteArray("org.omarchy.omanta.TestPreviewer") + QByteArray::number(QCoreApplication::applicationPid()));
+    qputenv("ROOK_PREVIEWER_SERVICE",
+            QByteArray("org.omarchy.rook.TestPreviewer") + QByteArray::number(QCoreApplication::applicationPid()));
 }
 
 static QVariant invoke(QObject *object, const char *method)
@@ -209,7 +209,7 @@ static void checkListIconSizing(QQuickWindow *window, QQuickItem *tab,
                               rows[3]->property("filePath").toString()};
     QTRY_COMPARE(invoke(tab, "selectedPaths").toStringList(), lastTwo);
 
-    const QString screenshot = qEnvironmentVariable("OMANTA_TEST_SCREENSHOT");
+    const QString screenshot = qEnvironmentVariable("ROOK_TEST_SCREENSHOT");
     if (!screenshot.isEmpty())
         QVERIFY(window->grabWindow().save(screenshot));
 
@@ -243,7 +243,7 @@ static void checkListIconSizing(QQuickWindow *window, QQuickItem *tab,
     // Sizes are remembered: saved to the settings file, and a new tab (as a
     // new window or a restart would) opens at them rather than the default.
     const auto saved = [] {
-        QFile settings(qEnvironmentVariable("OMANTA_SETTINGS_FILE"));
+        QFile settings(qEnvironmentVariable("ROOK_SETTINGS_FILE"));
         return settings.open(QIODevice::ReadOnly) ? settings.readAll() : QByteArray();
     };
     QTRY_VERIFY(saved().contains("iconZoom=80"));
@@ -307,7 +307,7 @@ static void checkDragPreviews(QQuickWindow *window, QQuickItem *tab,
             QVERIFY(image.pixelColor(image.width() / 2, image.height() / 2).alpha() > 0);
             if (thumbnailColor.isValid())
                 QCOMPARE(image.pixelColor(qRound(28 * scale), qRound(28 * scale)), thumbnailColor);
-            const QString screenshot = qEnvironmentVariable("OMANTA_TEST_DRAG_SCREENSHOT");
+            const QString screenshot = qEnvironmentVariable("ROOK_TEST_DRAG_SCREENSHOT");
             if (!screenshot.isEmpty())
                 QVERIFY(image.save(screenshot + "-" + mode + (multiple ? "-multi.png" : "-single.png")));
 
@@ -388,13 +388,13 @@ static void checkTrashFallback(QQmlApplicationEngine &engine, QObject *window, Q
             dialog = child;
     }
     QVERIFY(dialog);
-    auto *ops = engine.singletonInstance<FileOperations *>("Omanta", "FileOperations");
+    auto *ops = engine.singletonInstance<FileOperations *>("Rook", "FileOperations");
     QVERIFY(ops);
-    ops->copy({copying}, "omanta-test-unsupported://host/destination");
+    ops->copy({copying}, "rook-test-unsupported://host/destination");
     QTRY_VERIFY(!ops->busy());
     QVERIFY(!ops->lastError().isEmpty());
     QVERIFY(!dialog->property("visible").toBool());
-    const QString unsupported = "omanta-test-unsupported://host/original";
+    const QString unsupported = "rook-test-unsupported://host/original";
     QObject otherWindow;
     ops->trash({unsupported}, &otherWindow);
     QTRY_VERIFY(!ops->busy());
@@ -562,7 +562,7 @@ static void checkDisabledMenuItemsDim(QQuickWindow *window, QQuickItem *tab, con
     QVERIFY(on.isValid() && off.isValid());
     QVERIFY2(on != off, qPrintable(off.name()));
 
-    const QString menuShot = qEnvironmentVariable("OMANTA_TEST_MENU_SCREENSHOT");
+    const QString menuShot = qEnvironmentVariable("ROOK_TEST_MENU_SCREENSHOT");
     if (!menuShot.isEmpty()) {
         // Hover a row, past the open animation, to show the lit state.
         QTest::mouseMove(newFolder->window(),
@@ -736,10 +736,10 @@ void TestQmlViews::selectionAndVirtualDelegates()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign.*undefined|TypeError"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     const QStringList names{QStringLiteral("selected-") + QString(160, QLatin1Char('a')) + ".txt",
                             "constructor", "toString", "__proto__"};
     for (const QString &name : names)
@@ -750,9 +750,9 @@ void TestQmlViews::selectionAndVirtualDelegates()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QObject *window = nullptr;
     for (QObject *child : application.children()) {
@@ -804,8 +804,8 @@ void TestQmlViews::selectionAndVirtualDelegates()
         return;
 
     const QString selected = tree.filePath(names.first());
-    auto *stars = engine.singletonInstance<StarredStore *>("Omanta", "StarredStore");
-    auto *servers = engine.singletonInstance<ServerStore *>("Omanta", "ServerStore");
+    auto *stars = engine.singletonInstance<StarredStore *>("Rook", "StarredStore");
+    auto *servers = engine.singletonInstance<ServerStore *>("Rook", "ServerStore");
     QVERIFY(stars);
     QVERIFY(servers);
     stars->star({selected});
@@ -829,7 +829,7 @@ void TestQmlViews::selectionAndVirtualDelegates()
     tab->setProperty("searchQuery", "");
     // Show-hidden is a setting (#3): the tab follows it, and a toggle in the
     // tab (Ctrl+H, the menus) writes it back for every tab and the next run.
-    auto *settings = engine.singletonInstance<Settings *>("Omanta", "Settings");
+    auto *settings = engine.singletonInstance<Settings *>("Rook", "Settings");
     QVERIFY(settings);
     QCOMPARE(tab->property("showHidden").toBool(), false);
     settings->setShowHiddenFiles(true);
@@ -862,13 +862,13 @@ void TestQmlViews::selectionAndVirtualDelegates()
     if (QTest::currentTestFailed())
         return;
     checkLiveSelection(qobject_cast<QQuickWindow *>(window), tab,
-                       engine.singletonInstance<Settings *>("Omanta", "Settings"));
+                       engine.singletonInstance<Settings *>("Rook", "Settings"));
 
 }
 
 void TestQmlViews::emptyTrashRefreshesOpenViews()
 {
-    if (qEnvironmentVariable("OMANTA_TEST_TRASH_SANDBOX") != QLatin1String("1")) {
+    if (qEnvironmentVariable("ROOK_TEST_TRASH_SANDBOX") != QLatin1String("1")) {
         const QString bwrap = QStandardPaths::findExecutable("bwrap");
         if (bwrap.isEmpty() || !QFileInfo::exists("/usr/lib/gvfsd-trash"))
             QSKIP("The isolated Trash integration test requires bubblewrap and gvfs");
@@ -882,19 +882,19 @@ void TestQmlViews::emptyTrashRefreshesOpenViews()
             "--ro-bind", "/usr", "/usr", "--ro-bind", "/etc", "/etc",
             "--symlink", "usr/bin", "/bin", "--symlink", "usr/lib", "/lib",
             "--symlink", "usr/lib", "/lib64", "--proc", "/proc", "--dev", "/dev",
-            "--tmpfs", "/tmp", "--dir", "/omanta-test-home", "--dir", "/run/test",
-            "--setenv", "HOME", "/omanta-test-home",
-            "--setenv", "XDG_DATA_HOME", "/omanta-test-home/.local/share",
-            "--setenv", "XDG_CONFIG_HOME", "/omanta-test-home/.config",
-            "--setenv", "XDG_CACHE_HOME", "/omanta-test-home/.cache",
+            "--tmpfs", "/tmp", "--dir", "/rook-test-home", "--dir", "/run/test",
+            "--setenv", "HOME", "/rook-test-home",
+            "--setenv", "XDG_DATA_HOME", "/rook-test-home/.local/share",
+            "--setenv", "XDG_CONFIG_HOME", "/rook-test-home/.config",
+            "--setenv", "XDG_CACHE_HOME", "/rook-test-home/.cache",
             "--setenv", "XDG_RUNTIME_DIR", "/run/test",
-            "--setenv", "OMANTA_TEST_TRASH_SANDBOX", "1",
+            "--setenv", "ROOK_TEST_TRASH_SANDBOX", "1",
             "--setenv", "QT_QPA_PLATFORM", "offscreen",
             "--unsetenv", "QT_QPA_PLATFORMTHEME",
             "--unsetenv", "DISPLAY", "--unsetenv", "WAYLAND_DISPLAY",
             "--setenv", "QT_QUICK_BACKEND", "software",
             "--ro-bind", QCoreApplication::applicationFilePath(), "/test",
-            "--chdir", "/omanta-test-home",
+            "--chdir", "/rook-test-home",
             "dbus-run-session", "--", "/test", "emptyTrashRefreshesOpenViews"
         });
         QVERIFY(child.waitForStarted());
@@ -907,7 +907,7 @@ void TestQmlViews::emptyTrashRefreshesOpenViews()
         return;
     }
 
-    QCOMPARE(QDir::homePath(), QStringLiteral("/omanta-test-home"));
+    QCOMPARE(QDir::homePath(), QStringLiteral("/rook-test-home"));
     QVERIFY(QDir().mkpath(QDir::homePath() + "/.local/share/Trash/files"));
     QVERIFY(QDir().mkpath(QDir::homePath() + "/.local/share/Trash/info"));
     // The original bug calls g_file_get_child(trash, "/") for the root's
@@ -919,9 +919,9 @@ void TestQmlViews::emptyTrashRefreshesOpenViews()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(QStringLiteral("trash:///"));
     QList<QQuickWindow *> windows;
     for (QObject *child : application.children()) {
@@ -938,8 +938,8 @@ void TestQmlViews::emptyTrashRefreshesOpenViews()
     QVERIFY2(model->errorMessage().isEmpty(), qPrintable(model->errorMessage()));
     QCOMPARE(model->count(), 0);
     QSignalSpy resets(model, &QAbstractItemModel::modelReset);
-    auto *ops = engine.singletonInstance<FileOperations *>("Omanta", "FileOperations");
-    auto *settings = engine.singletonInstance<Settings *>("Omanta", "Settings");
+    auto *ops = engine.singletonInstance<FileOperations *>("Rook", "FileOperations");
+    auto *settings = engine.singletonInstance<Settings *>("Rook", "Settings");
     QVERIFY(ops);
     QVERIFY(settings);
     QObject *confirmation = nullptr;
@@ -993,10 +993,10 @@ void TestQmlViews::pasteKeepsCopiedFilesOnClipboard()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign.*undefined|TypeError"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     const QString copied = tree.writeFile("source/copied.txt");
     const QString cut = tree.writeFile("source/cut.txt");
     QVERIFY(QDir().mkpath(tree.filePath("target")));
@@ -1007,9 +1007,9 @@ void TestQmlViews::pasteKeepsCopiedFilesOnClipboard()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.filePath("target"));
     QObject *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1019,8 +1019,8 @@ void TestQmlViews::pasteKeepsCopiedFilesOnClipboard()
         }
     }
     QVERIFY(window);
-    auto *clipboard = engine.singletonInstance<Clipboard *>("Omanta", "Clipboard");
-    auto *operations = engine.singletonInstance<QObject *>("Omanta", "FileOperations");
+    auto *clipboard = engine.singletonInstance<Clipboard *>("Rook", "Clipboard");
+    auto *operations = engine.singletonInstance<QObject *>("Rook", "FileOperations");
     QVERIFY(clipboard);
     QVERIFY(operations);
 
@@ -1080,10 +1080,10 @@ void TestQmlViews::thumbnailsFollowInPlaceEdits()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign.*undefined|TypeError"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
 
     // Every edit is stamped with the same whole second: a picture re-saved
     // within the second it was made must still get a fresh preview.
@@ -1106,9 +1106,9 @@ void TestQmlViews::thumbnailsFollowInPlaceEdits()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QObject *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1194,14 +1194,14 @@ void TestQmlViews::dragPreviewSurvivesItsOwner()
     engine.addImageProvider("thumbnail", new ThumbnailProvider);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
 
     // A view delegate, as the list and icon views hold it: navigating away
     // resets the model, which clears the delegate's context straight away
     // and deletes the item later.
     QQmlComponent component(&engine);
-    component.setData("import QtQuick\nimport Omanta\n"
+    component.setData("import QtQuick\nimport Rook\n"
                       "ListView { width: 200; height: 200; model: 1\n"
                       "  delegate: FileDrag { width: 10; height: 10; pressed: true; dragging: false } }",
                       QUrl());
@@ -1231,7 +1231,7 @@ void TestQmlViews::spacePreviewsInSushi()
     if (!bus.isConnected())
         QSKIP("needs a session bus");
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign.*undefined|TypeError"));
-    const QString service = qEnvironmentVariable("OMANTA_PREVIEWER_SERVICE");
+    const QString service = qEnvironmentVariable("ROOK_PREVIEWER_SERVICE");
     FakePreviewer fake;
     QVERIFY(bus.registerObject(QStringLiteral("/org/gnome/NautilusPreviewer"), &fake,
                                QDBusConnection::ExportAllSlots | QDBusConnection::ExportAllProperties));
@@ -1243,13 +1243,13 @@ void TestQmlViews::spacePreviewsInSushi()
 
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     // This is the Sushi path and the classic type-ahead keys, both opt-in now.
     {
-        QFile settings(config.filePath("OMANTA_SETTINGS_FILE"));
+        QFile settings(config.filePath("ROOK_SETTINGS_FILE"));
         QVERIFY(settings.open(QIODevice::WriteOnly));
         settings.write("previewer=sushi\nkeyboardMode=classic\n");
     }
@@ -1263,9 +1263,9 @@ void TestQmlViews::spacePreviewsInSushi()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1281,7 +1281,7 @@ void TestQmlViews::spacePreviewsInSushi()
     window->requestActivate();
     tab->forceActiveFocus();
     QTRY_VERIFY(tab->hasActiveFocus());
-    auto *previewer = engine.singletonInstance<QObject *>("Omanta", "Previewer");
+    auto *previewer = engine.singletonInstance<QObject *>("Rook", "Previewer");
     QVERIFY(previewer);
     const QString firstUri = QUrl::fromLocalFile(first).toString(QUrl::FullyEncoded);
     const QString secondUri = QUrl::fromLocalFile(second).toString(QUrl::FullyEncoded);
@@ -1377,10 +1377,10 @@ void TestQmlViews::tabCloseButtonClosesTab()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign.*undefined|TypeError"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     tree.writeFile("alpha.txt");
 
     QQmlApplicationEngine engine;
@@ -1389,9 +1389,9 @@ void TestQmlViews::tabCloseButtonClosesTab()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1464,10 +1464,10 @@ void TestQmlViews::tabTitlesFollowNavigation()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign.*undefined|TypeError"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     for (const char *folder : {"one", "two", "three"})
         QVERIFY(QDir().mkpath(tree.filePath(folder)));
 
@@ -1477,9 +1477,9 @@ void TestQmlViews::tabTitlesFollowNavigation()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1526,10 +1526,10 @@ void TestQmlViews::vimKeysFilterAndQuickView()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|qml:.*Error|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     QVERIFY(QDir().mkpath(tree.filePath("folder")));
     tree.writeFile("alpha.txt");
     tree.writeFile("beta.md");
@@ -1541,9 +1541,9 @@ void TestQmlViews::vimKeysFilterAndQuickView()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1559,7 +1559,7 @@ void TestQmlViews::vimKeysFilterAndQuickView()
     window->requestActivate();
     tab->forceActiveFocus();
     QTRY_VERIFY(tab->hasActiveFocus());
-    auto *settings = engine.singletonInstance<Settings *>("Omanta", "Settings");
+    auto *settings = engine.singletonInstance<Settings *>("Rook", "Settings");
     QVERIFY(settings);
     QCOMPARE(settings->keyboardMode(), QStringLiteral("vim"));
     const auto name = [&] { return window->property("currentName").toString(); };
@@ -1680,14 +1680,14 @@ void TestQmlViews::quickViewOptionalKinds()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     {
         QPdfWriter pdf(tree.filePath("a-doc.pdf"));
         QPainter painter(&pdf);
-        painter.drawText(100, 100, QStringLiteral("omanta"));
+        painter.drawText(100, 100, QStringLiteral("rook"));
     }
     {
         // 0.2 s of 8-bit mono silence: the smallest valid WAV.
@@ -1712,9 +1712,9 @@ void TestQmlViews::quickViewOptionalKinds()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1751,10 +1751,10 @@ void TestQmlViews::sessionRoundTrip()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     for (const char *folder : {"one", "two", "three", "gone"})
         QVERIFY(QDir().mkpath(tree.filePath(folder)));
 
@@ -1764,9 +1764,9 @@ void TestQmlViews::sessionRoundTrip()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     const auto windows = [&] {
         QList<QQuickWindow *> found;
         for (QObject *child : application.children()) {
@@ -1820,10 +1820,10 @@ void TestQmlViews::splitPaneTransfers()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     QVERIFY(QDir().mkpath(tree.filePath("left")));
     QVERIFY(QDir().mkpath(tree.filePath("right")));
     tree.writeFile("left/a.txt");
@@ -1835,9 +1835,9 @@ void TestQmlViews::splitPaneTransfers()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.filePath("right"));
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1909,12 +1909,12 @@ void TestQmlViews::newTabTakesTheKeys()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     {
-        QFile settings(config.filePath("OMANTA_SETTINGS_FILE"));
+        QFile settings(config.filePath("ROOK_SETTINGS_FILE"));
         QVERIFY(settings.open(QIODevice::WriteOnly));
         settings.write("defaultViewMode=list\n");
     }
@@ -1927,9 +1927,9 @@ void TestQmlViews::newTabTakesTheKeys()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -1981,10 +1981,10 @@ void TestQmlViews::shortcutsSearch()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     tree.writeFile("a.txt");
 
     QQmlApplicationEngine engine;
@@ -1993,9 +1993,9 @@ void TestQmlViews::shortcutsSearch()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -2059,10 +2059,10 @@ void TestQmlViews::columnsAndGalleryViews()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     QVERIFY(QDir().mkpath(tree.filePath("a/b/c")));
     tree.writeFile("a/b/c/deep.txt");
     tree.writeFile("a/b/note.txt");
@@ -2074,9 +2074,9 @@ void TestQmlViews::columnsAndGalleryViews()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.filePath("a/b"));
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -2156,12 +2156,12 @@ void TestQmlViews::dragLabelAndSpringLoadedFolders()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     {
-        QFile settings(config.filePath("OMANTA_SETTINGS_FILE"));
+        QFile settings(config.filePath("ROOK_SETTINGS_FILE"));
         QVERIFY(settings.open(QIODevice::WriteOnly));
         settings.write("defaultViewMode=list\nspringLoadDelay=0.75\n");
     }
@@ -2174,9 +2174,9 @@ void TestQmlViews::dragLabelAndSpringLoadedFolders()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.filePath("view"));
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -2206,9 +2206,9 @@ void TestQmlViews::dragLabelAndSpringLoadedFolders()
     // Same filesystem, no keys: a move, into the folder under the pointer.
     QTRY_VERIFY(label->property("text").toString().contains(QStringLiteral("Move to “inbox”")));
 
-    // One of omanta's own drags: a single card the window draws at the
+    // One of rook's own drags: a single card the window draws at the
     // pointer — [▣ 5 items | Move] — and no separate badge.
-    auto *dragState = engine.singletonInstance<QObject *>("Omanta", "DragState");
+    auto *dragState = engine.singletonInstance<QObject *>("Rook", "DragState");
     QVERIFY(dragState);
     dragState->setProperty("cardText", QStringLiteral("5 items"));
     dragState->setProperty("ownDrag", true);
@@ -2258,12 +2258,12 @@ void TestQmlViews::dragGestureStartsADrag()
     QTest::failOnWarning(QRegularExpression("Required property|Cannot assign|TypeError|ReferenceError|Could not convert|\\.qml:\\d+"));
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     {
-        QFile settings(config.filePath("OMANTA_SETTINGS_FILE"));
+        QFile settings(config.filePath("ROOK_SETTINGS_FILE"));
         QVERIFY(settings.open(QIODevice::WriteOnly));
         settings.write("defaultViewMode=list\n");
     }
@@ -2275,9 +2275,9 @@ void TestQmlViews::dragGestureStartsADrag()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {
@@ -2291,7 +2291,7 @@ void TestQmlViews::dragGestureStartsADrag()
     QQuickItem *row = nullptr;
     QTRY_VERIFY((row = findFileRow(window->contentItem(), file)));
 
-    auto *dragSource = engine.singletonInstance<QObject *>("Omanta", "DragSource");
+    auto *dragSource = engine.singletonInstance<QObject *>("Rook", "DragSource");
     QVERIFY(dragSource);
     QSignalSpy finished(dragSource, SIGNAL(finished(int,int)));
     QSignalSpy activeChanged(dragSource, SIGNAL(activeChanged()));
@@ -2320,20 +2320,20 @@ void TestQmlViews::dragGestureStartsADrag()
 
 // Screenshots of the floating surfaces for a human to look at — dialogs,
 // popovers, drop-downs, the quick view. Skipped unless
-// OMANTA_TEST_POLISH_SHOTS names a directory to write them to.
+// ROOK_TEST_POLISH_SHOTS names a directory to write them to.
 void TestQmlViews::polishScreenshots()
 {
-    const QString dir = qEnvironmentVariable("OMANTA_TEST_POLISH_SHOTS");
+    const QString dir = qEnvironmentVariable("ROOK_TEST_POLISH_SHOTS");
     if (dir.isEmpty())
-        QSKIP("set OMANTA_TEST_POLISH_SHOTS to a directory to take them");
+        QSKIP("set ROOK_TEST_POLISH_SHOTS to a directory to take them");
     TempTree tree;
     QTemporaryDir config;
-    for (const char *env : {"OMANTA_SETTINGS_FILE", "OMANTA_STARRED_FILE",
-                           "OMANTA_SERVERS_FILE", "OMANTA_BOOKMARKS_FILE"})
+    for (const char *env : {"ROOK_SETTINGS_FILE", "ROOK_STARRED_FILE",
+                           "ROOK_SERVERS_FILE", "ROOK_BOOKMARKS_FILE"})
         qputenv(env, config.filePath(env).toUtf8());
-    qputenv("OMANTA_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
+    qputenv("ROOK_COLORS_FILE", config.filePath("missing/parent/colors.toml").toUtf8());
     {
-        QFile settings(config.filePath("OMANTA_SETTINGS_FILE"));
+        QFile settings(config.filePath("ROOK_SETTINGS_FILE"));
         QVERIFY(settings.open(QIODevice::WriteOnly));
         settings.write("defaultViewMode=list\n");
         QFile notes(tree.filePath("notes.md"));
@@ -2348,9 +2348,9 @@ void TestQmlViews::polishScreenshots()
     Application application(&engine);
     Platform platform;
     SystemTheme theme;
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "App", &application);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Platform", &platform);
-    qmlRegisterSingletonInstance("Omanta.Runtime", 1, 0, "Theme", &theme);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "App", &application);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Platform", &platform);
+    qmlRegisterSingletonInstance("Rook.Runtime", 1, 0, "Theme", &theme);
     application.openWindow(tree.path());
     QQuickWindow *window = nullptr;
     for (QObject *child : application.children()) {

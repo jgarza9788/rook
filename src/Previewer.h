@@ -8,12 +8,12 @@
 
 // Quick Look: Space previews the selected file in Sushi, the previewer
 // Nautilus uses and stock Omarchy ships. It is a separate D-Bus service, so
-// omanta gets the same previews (zoomable images, text, PDF, office files
+// rook gets the same previews (zoomable images, text, PDF, office files
 // when LibreOffice is present, audio, video) by asking it the way Nautilus
 // does — org.gnome.NautilusPreviewer2.ShowFile — rather than growing viewers
 // of its own.
 //
-// OMANTA_PREVIEWER_SERVICE names another bus name (the tests register a fake
+// ROOK_PREVIEWER_SERVICE names another bus name (the tests register a fake
 // there, so a suite run never opens a window).
 class Previewer : public QObject
 {

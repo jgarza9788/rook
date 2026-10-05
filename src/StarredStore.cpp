@@ -13,7 +13,7 @@ StarredStore::StarredStore(QObject *parent)
     load();
 
     // Watch for another process editing the file. Within one process the
-    // singleton is already shared, so this is about a second omanta (or a
+    // singleton is already shared, so this is about a second rook (or a
     // hand edit) — same re-arm dance as the bookmarks watch.
     m_watcher = new QFileSystemWatcher(this);
     if (QFile::exists(filePath()))
@@ -35,10 +35,10 @@ StarredStore::StarredStore(QObject *parent)
 
 QString StarredStore::filePath() const
 {
-    const QString override = qEnvironmentVariable("OMANTA_STARRED_FILE");
+    const QString override = qEnvironmentVariable("ROOK_STARRED_FILE");
     if (!override.isEmpty())
         return override;
-    return QDir::homePath() + QStringLiteral("/.config/omanta/starred");
+    return QDir::homePath() + QStringLiteral("/.config/rook/starred");
 }
 
 void StarredStore::load()

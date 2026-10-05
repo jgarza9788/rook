@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
-// A small themed directory chooser — "Extract to…" needs one, and omanta
+// A small themed directory chooser — "Extract to…" needs one, and rook
 // picking folders with a GTK portal dialog would be absurd. Navigate by
 // double-click (or Enter), Backspace/the ⬆ button go up; Select takes the
 // highlighted folder, or the folder being viewed when nothing is.

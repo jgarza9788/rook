@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // Columns (Ctrl+3): Finder's column view. One column per folder along the
 // path — from Home, or / outside it, the same walk as the path bar — then

@@ -179,9 +179,9 @@ void TestQuickView::asyncPathLandsOnlyTheNewest()
 void TestQuickView::checksumMatchesAndCompares()
 {
     TempTree tree;
-    const QString path = write(tree, "data.bin", "omanta checksum test\n");
+    const QString path = write(tree, "data.bin", "rook checksum test\n");
     const QString expected = QString::fromLatin1(
-        QCryptographicHash::hash("omanta checksum test\n", QCryptographicHash::Sha256).toHex());
+        QCryptographicHash::hash("rook checksum test\n", QCryptographicHash::Sha256).toHex());
 
     Checksum checksum;
     checksum.setPath(path);
@@ -198,7 +198,7 @@ void TestQuickView::checksumMatchesAndCompares()
     checksum.start();
     QTRY_VERIFY(!checksum.running());
     QCOMPARE(checksum.result(), QString::fromLatin1(
-        QCryptographicHash::hash("omanta checksum test\n", QCryptographicHash::Md5).toHex()));
+        QCryptographicHash::hash("rook checksum test\n", QCryptographicHash::Md5).toHex()));
 
     checksum.setPath(tree.filePath("missing"));
     checksum.start();

@@ -41,7 +41,7 @@ void DragSource::exec(int token, const QStringList &paths, const QPoint &hotSpot
     // delete it. QDrag takes ownership of the mime data.
     auto *drag = new QDrag(this);
     drag->setMimeData(mime);
-    // A blank 1×1 picture, not a null one — omanta draws its own live card
+    // A blank 1×1 picture, not a null one — rook draws its own live card
     // over its windows, and a null pixmap is not something every platform
     // drag handles.
     QImage blank(1, 1, QImage::Format_ARGB32_Premultiplied);

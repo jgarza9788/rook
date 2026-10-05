@@ -1,5 +1,5 @@
 #!/bin/bash
 
-# omarchy:summary=Launch Files (omanta)
+# omarchy:summary=Launch Files (rook)
 
-exec setsid uwsm-app -- omanta --new-window
+exec setsid uwsm-app -- rook --new-window

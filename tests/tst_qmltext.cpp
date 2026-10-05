@@ -21,9 +21,9 @@ private Q_SLOTS:
 
 void TestQmlText::everyTextElementDeclaresItsFormat()
 {
-    const QDir qmlDir(QStringLiteral(OMANTA_QML_DIR));
+    const QDir qmlDir(QStringLiteral(ROOK_QML_DIR));
     const QStringList files = qmlDir.entryList({ QStringLiteral("*.qml") }, QDir::Files);
-    QVERIFY2(!files.isEmpty(), "no QML found — check OMANTA_QML_DIR");
+    QVERIFY2(!files.isEmpty(), "no QML found — check ROOK_QML_DIR");
 
     // Opens a Text or Label block: the type name at the start of a line, or
     // after "delegate:", "header:", "contentItem:" and friends.

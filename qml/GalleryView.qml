@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // Gallery (Ctrl+4): Finder's gallery view. The current item large on top —
 // the same preview as Space — with a caption, and a strip of thumbnails

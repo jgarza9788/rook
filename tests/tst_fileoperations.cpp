@@ -1030,7 +1030,7 @@ void TestFileOperations::undoOfMergedMoveKeepsExistingContents()
 void TestFileOperations::crossDeviceDirectoryMoveAndUndo()
 {
     TempTree tree;
-    QTemporaryDir destination(QStringLiteral("/dev/shm/omanta-test-XXXXXX"));
+    QTemporaryDir destination(QStringLiteral("/dev/shm/rook-test-XXXXXX"));
     if (!destination.isValid())
         QSKIP("No writable /dev/shm for a second filesystem");
     struct stat srcStat{}, dstStat{};
@@ -1387,12 +1387,12 @@ void TestFileOperations::unsupportedTrashReportsOnlyItsOwnSources()
     FileOperations ops;
     QObject requester;
     QSignalSpy fallback(&ops, &FileOperations::trashUnavailable);
-    ops.copy({source}, "omanta-test-unsupported://host/destination");
+    ops.copy({source}, "rook-test-unsupported://host/destination");
     QVERIFY(settle(ops));
     QVERIFY(!ops.lastError().isEmpty());
     QCOMPARE(fallback.size(), 0);
 
-    const QString unsupported = "omanta-test-unsupported://host/source";
+    const QString unsupported = "rook-test-unsupported://host/source";
     ops.trash({unsupported, tree.filePath("missing"), source}, &requester);
     QVERIFY(settle(ops));
     QCOMPARE(fallback.size(), 1);

@@ -23,8 +23,8 @@ public:
 
     explicit TempTree(Location location = SystemTemp)
         : m_dir(location == UnderHome
-                    ? QDir(QDir::homePath()).filePath(QStringLiteral(".omanta-test-XXXXXX"))
-                    : QDir::tempPath() + QStringLiteral("/omanta-test-XXXXXX"))
+                    ? QDir(QDir::homePath()).filePath(QStringLiteral(".rook-test-XXXXXX"))
+                    : QDir::tempPath() + QStringLiteral("/rook-test-XXXXXX"))
     {
         Q_ASSERT(m_dir.isValid());
     }

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# omarchy:summary=Switch the default file manager between omanta and Nautilus
+# omarchy:summary=Switch the default file manager between rook and Nautilus
 #
 # Flips every per-user integration point that decides "which file manager":
 #
-#   - xdg-mime defaults: inode/directory plus every archive type omanta's
+#   - xdg-mime defaults: inode/directory plus every archive type rook's
 #     .desktop declares (the same set Nautilus registers)
 #   - the SUPER+SHIFT+F / SUPER+ALT+SHIFT+F bindings, via a managed block
 #     in ~/.config/hypr/bindings.lua (hl.unbind + o.bind, the documented
@@ -13,11 +13,11 @@
 #   - D-Bus activation of org.freedesktop.FileManager1: a user-level
 #     .service file in ~/.local/share/dbus-1/services shadows the one
 #     Nautilus ships in /usr/share, so "show in folder" from a browser
-#     starts omanta when no file manager is running. Switching back
+#     starts rook when no file manager is running. Switching back
 #     removes it and the Nautilus one applies again.
 #
 # While a file manager is running, org.freedesktop.FileManager1 belongs
-# to whichever one claimed it first; omanta declines it when Nautilus
+# to whichever one claimed it first; rook declines it when Nautilus
 # owns it and takes it over once Nautilus exits. Switching therefore
 # also means closing the other file manager's windows — the script says
 # so rather than killing anything.
@@ -26,23 +26,23 @@
 # (SUPER+CTRL+O) via ~/.config/omarchy/extensions/omarchy-menu.jsonc;
 # the shell watches that file, so the row appears without a restart.
 #
-# Everything is reversible: `omanta-switch nautilus` plus `remove-menu`
+# Everything is reversible: `rook-switch nautilus` plus `remove-menu`
 # restores the stock Omarchy state exactly.
 
 set -euo pipefail
 
-OMANTA_DESKTOP="omanta.desktop"
+ROOK_DESKTOP="rook.desktop"
 NAUTILUS_DESKTOP="org.gnome.Nautilus.desktop"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 BINDINGS_FILE="$CONFIG_HOME/hypr/bindings.lua"
 DBUS_SERVICE_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/dbus-1/services/org.freedesktop.FileManager1.service"
 MENU_FILE="$CONFIG_HOME/omarchy/extensions/omarchy-menu.jsonc"
-BLOCK_BEGIN="-- >>> omanta-switch managed block, do not edit by hand"
-BLOCK_END="-- <<< omanta-switch managed block"
-MENU_BEGIN="// >>> omanta-switch managed block, do not edit by hand"
-MENU_END="// <<< omanta-switch managed block"
+BLOCK_BEGIN="-- >>> rook-switch managed block, do not edit by hand"
+BLOCK_END="-- <<< rook-switch managed block"
+MENU_BEGIN="// >>> rook-switch managed block, do not edit by hand"
+MENU_END="// <<< rook-switch managed block"
 
-die() { echo "omanta-switch: $*" >&2; exit 1; }
+die() { echo "rook-switch: $*" >&2; exit 1; }
 
 # Rewrites a file in place from a temporary copy. Writing into it, rather
 # than renaming over it (mv, sed -i), keeps a symlink into a dotfiles repo a
@@ -56,9 +56,9 @@ replace_contents() {
 find_desktop_file() {
     local dir IFS=:
     for dir in "${XDG_DATA_HOME:-$HOME/.local/share}" ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do
-        [ -f "$dir/applications/$OMANTA_DESKTOP" ] && { echo "$dir/applications/$OMANTA_DESKTOP"; return; }
+        [ -f "$dir/applications/$ROOK_DESKTOP" ] && { echo "$dir/applications/$ROOK_DESKTOP"; return; }
     done
-    die "$OMANTA_DESKTOP not found in any XDG applications directory — is omanta installed?"
+    die "$ROOK_DESKTOP not found in any XDG applications directory — is rook installed?"
 }
 
 mimetypes() {
@@ -81,8 +81,8 @@ bindings_block() {
 $BLOCK_BEGIN
 hl.unbind("SUPER + SHIFT + F")
 hl.unbind("SUPER + ALT + SHIFT + F")
-o.bind("SUPER + SHIFT + F", "File manager", "omanta-launch")
-o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", "omanta-launch-cwd")
+o.bind("SUPER + SHIFT + F", "File manager", "rook-launch")
+o.bind("SUPER + ALT + SHIFT + F", "File manager (cwd)", "rook-launch-cwd")
 $BLOCK_END
 EOF
 }
@@ -110,15 +110,15 @@ add_bindings_block() {
     printf '\n%s\n' "$(bindings_block)" >> "$BINDINGS_FILE"
 }
 
-omanta_binary() {
+rook_binary() {
     # Installed beside this script by the package and by bin/install; PATH
     # covers anything else (a dev checkout running the script in place).
     local sibling
-    sibling="$(dirname "$(readlink -f "$0")")/omanta"
+    sibling="$(dirname "$(readlink -f "$0")")/rook"
     if [ -x "$sibling" ]; then
         echo "$sibling"
     else
-        command -v omanta || die "omanta not found beside $0 or on PATH"
+        command -v rook || die "rook not found beside $0 or on PATH"
     fi
 }
 
@@ -129,19 +129,19 @@ shell_quote() {
 }
 
 add_dbus_service() {
-    local omanta_bin
-    omanta_bin="$(omanta_binary)" || exit 1
+    local rook_bin
+    rook_bin="$(rook_binary)" || exit 1
     mkdir -p "$(dirname "$DBUS_SERVICE_FILE")"
-    # Nothing removes this file if omanta is uninstalled without switching
+    # Nothing removes this file if rook is uninstalled without switching
     # back first, and a dangling Exec would break "show in folder" for good
-    # (it shadows the Nautilus file). So when omanta is gone the file deletes
+    # (it shadows the Nautilus file). So when rook is gone the file deletes
     # itself and hands this one request to Nautilus.
     # shellcheck disable=SC2094 # the path is only quoted into the text, never read
     cat > "$DBUS_SERVICE_FILE" <<EOF
-# Written by omanta-switch; \`omanta-switch nautilus\` removes it.
+# Written by rook-switch; \`rook-switch nautilus\` removes it.
 [D-BUS Service]
 Name=org.freedesktop.FileManager1
-Exec=/bin/sh -c 'if [ -x "\$0" ]; then exec "\$0" --service; fi; rm -f -- "\$1"; busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1; exec nautilus --gapplication-service' $(shell_quote "$omanta_bin") $(shell_quote "$DBUS_SERVICE_FILE")
+Exec=/bin/sh -c 'if [ -x "\$0" ]; then exec "\$0" --service; fi; rm -f -- "\$1"; busctl --user call org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus ReloadConfig >/dev/null 2>&1; exec nautilus --gapplication-service' $(shell_quote "$rook_bin") $(shell_quote "$DBUS_SERVICE_FILE")
 EOF
     reload_dbus
 }
@@ -165,7 +165,7 @@ reload_hyprland() {
 
 menu_entry() {
     cat <<'EOF'
-  "trigger.toggle.file-manager": {"icon":"󰉋","label":"Omanta File Manager","checked":"xdg-mime query default inode/directory | grep -qx omanta.desktop","action":"omanta-switch toggle"},
+  "trigger.toggle.file-manager": {"icon":"󰉋","label":"Rook File Manager","checked":"xdg-mime query default inode/directory | grep -qx rook.desktop","action":"rook-switch toggle"},
 EOF
 }
 
@@ -218,14 +218,14 @@ add_menu_block() {
     rm -f "$backup"
 }
 
-switch_to_omanta() {
-    apply_defaults "$OMANTA_DESKTOP"
+switch_to_rook() {
+    apply_defaults "$ROOK_DESKTOP"
     add_bindings_block
     add_dbus_service
     reload_hyprland
-    echo "Default file manager: omanta"
-    echo "SUPER+SHIFT+F now launches omanta. Close any open Nautilus windows"
-    echo "so omanta can take over \"show in folder\" (org.freedesktop.FileManager1)."
+    echo "Default file manager: rook"
+    echo "SUPER+SHIFT+F now launches rook. Close any open Nautilus windows"
+    echo "so rook can take over \"show in folder\" (org.freedesktop.FileManager1)."
 }
 
 switch_to_nautilus() {
@@ -234,7 +234,7 @@ switch_to_nautilus() {
     remove_dbus_service
     reload_hyprland
     echo "Default file manager: Nautilus (stock Omarchy state restored)"
-    echo "Close any open omanta windows so Nautilus can claim"
+    echo "Close any open rook windows so Nautilus can claim"
     echo "org.freedesktop.FileManager1 on its next start."
 }
 
@@ -243,7 +243,7 @@ status() {
     def="$(current_default)"
     echo "inode/directory default : ${def:-unset}"
     if [ -f "$BINDINGS_FILE" ] && grep -qF -- "$BLOCK_BEGIN" "$BINDINGS_FILE"; then
-        echo "SUPER+SHIFT+F binding   : omanta (managed override present)"
+        echo "SUPER+SHIFT+F binding   : rook (managed override present)"
     else
         echo "SUPER+SHIFT+F binding   : stock (Nautilus)"
     fi
@@ -253,7 +253,7 @@ status() {
         echo "Toggle-menu entry       : not installed"
     fi
     if [ -f "$DBUS_SERVICE_FILE" ]; then
-        echo "FileManager1 activation : omanta (user .service file)"
+        echo "FileManager1 activation : rook (user .service file)"
     else
         echo "FileManager1 activation : stock (Nautilus)"
     fi
@@ -267,20 +267,20 @@ status() {
 }
 
 case "${1-status}" in
-    omanta)       switch_to_omanta ;;
+    rook)       switch_to_rook ;;
     nautilus)     switch_to_nautilus ;;
     toggle)
-        if [ "$(current_default)" = "$OMANTA_DESKTOP" ]; then
+        if [ "$(current_default)" = "$ROOK_DESKTOP" ]; then
             switch_to_nautilus
         else
-            switch_to_omanta
+            switch_to_rook
         fi
         ;;
     status)       status ;;
     install-menu) add_menu_block; echo "Toggle-menu entry installed (SUPER+CTRL+O → Toggle)" ;;
     remove-menu)  remove_menu_block; echo "Toggle-menu entry removed" ;;
     *)
-        echo "usage: omanta-switch [omanta|nautilus|toggle|status|install-menu|remove-menu]" >&2
+        echo "usage: rook-switch [rook|nautilus|toggle|status|install-menu|remove-menu]" >&2
         exit 2
         ;;
 esac

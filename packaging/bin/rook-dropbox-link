@@ -3,8 +3,8 @@
 # nautilus-dropbox uses. The `dropbox` CLI wrapper is not an option: it
 # blocks indefinitely when the GUI side is unavailable.
 #
-#   omanta-dropbox-link copy <path>   put the link on the clipboard
-#   omanta-dropbox-link open <path>   open the link in the browser
+#   rook-dropbox-link copy <path>   put the link on the clipboard
+#   rook-dropbox-link open <path>   open the link in the browser
 set -eu
 
 mode="$1"
@@ -15,7 +15,7 @@ path="$2"
 # the daemon for a link to something the user never selected.
 case "$path" in
     *"
-"*) echo "omanta-dropbox-link: refusing a path containing a newline" >&2; exit 2 ;;
+"*) echo "rook-dropbox-link: refusing a path containing a newline" >&2; exit 2 ;;
 esac
 
 link=$(printf 'get_shared_link\npath\t%s\ndone\n' "$path" \

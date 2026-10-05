@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // About Files — the hamburger menu's last entry, omacalc-flat.
 OmDialog {
@@ -40,7 +40,7 @@ OmDialog {
         Text {
             textFormat: Text.PlainText
             anchors.horizontalCenter: parent.horizontalCenter
-            text: "omanta " + Qt.application.version
+            text: "rook " + Qt.application.version
             color: Colors.textDim
             font.pixelSize: 12
         }

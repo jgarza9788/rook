@@ -1,5 +1,5 @@
 import QtQuick
-import Omanta.Runtime
+import Rook.Runtime
 
 // The floating-surface card shared by menus, dialogs, popovers and
 // drop-downs: the theme's surface, a thin accent frame (the Omarchy/Hyprland

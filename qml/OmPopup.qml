@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // A popover (search filters, server protocols, file operations): the shared
 // card and the shared open motion, growing from the edge it hangs off —

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // The places sidebar: user folders, devices, bookmarks, network. Every colour
 // comes from Colors, so it wears the active Omarchy theme like the rest of

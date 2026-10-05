@@ -11,9 +11,9 @@ class QQmlApplicationEngine;
 
 // Owns the window set and the process lifetime.
 //
-// omanta is single-process/multi-window like Nautilus: launching it again
+// rook is single-process/multi-window like Nautilus: launching it again
 // does not start a second process, it asks the running one for another window.
-// That is what makes `omanta --new-window` from a keybinding feel instant and
+// That is what makes `rook --new-window` from a keybinding feel instant and
 // what lets D-Bus callers reveal a file in an existing window.
 class Application : public QObject
 {

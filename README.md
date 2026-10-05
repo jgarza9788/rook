@@ -1,13 +1,23 @@
-# omanta
+# rook
+
+The pro edition of [omanta](https://github.com/jgarza9788/omanta): a
+command-palette-first file manager with power-user tools — Rename Studio
+(bulk rename with live preview), regex everywhere, folder compare/sync,
+duplicate finder, checksums, macros and scripting. See the
+[design document](docs/design.md) for the plan.
+
+> **Work in progress.** Rook currently ships omanta's feature set under the
+> rook name; the palette and pro features land phase by phase (see the
+> roadmap in the design doc). Everything below describes that base.
 
 A native file manager for [Omarchy](https://omarchy.org), built with Qt Quick
 and GIO as a drop-in replacement for GNOME Files (Nautilus) — same
 keybindings, same launch semantics, same D-Bus integration, themed by your
 Omarchy theme.
 
-![omanta](docs/screenshot.png)
+![rook](docs/screenshot.png)
 
-> **Testing preview.** omanta installs *alongside* your existing file manager
+> **Testing preview.** rook installs *alongside* your existing file manager
 > and stays out of the way until you choose it. The only thing it adds by
 > itself is a switch in the Omarchy Toggle menu. The switch flips between the
 > two and restores the stock setup byte-identically. Please file issues for
@@ -135,26 +145,15 @@ and F6 moves the selection into the other pane; Ctrl+F6 switches panes.
 
 ## Install
 
-Grab the package and its checksum file from the
-[latest release](https://github.com/28allday/omanta/releases), check it, and
-install it:
+There are no prebuilt rook packages yet. Build it with `makepkg` — see the
+note in `packaging/PKGBUILD` about pinning the first release — or, for a
+quick test from a checkout, run `./build_and_run.sh`.
+
+To build the package:
 
 ```bash
-curl -LO https://github.com/28allday/omanta/releases/download/v0.1.23/omanta-0.1.23-1-x86_64.pkg.tar.zst
-curl -LO https://github.com/28allday/omanta/releases/download/v0.1.23/SHA256SUMS
-sha256sum -c --ignore-missing SHA256SUMS   # must print "OK"
-sudo pacman -U omanta-0.1.23-1-x86_64.pkg.tar.zst
-```
-
-(The package is unsigned, so pacman won't install it straight from a URL —
-download it first, check it against `SHA256SUMS`, and install the local
-file. Don't install it if the check fails.)
-
-Or build it yourself:
-
-```bash
-git clone https://github.com/28allday/omanta.git
-cd omanta/packaging
+git clone https://github.com/jgarza9788/rook.git
+cd rook/packaging
 makepkg -si
 ```
 
@@ -168,46 +167,46 @@ remains the file manager until you switch.
 
 ## Switching
 
-The first time you open omanta, it adds an **Omanta File Manager** row to
+The first time you open rook, it adds an **Rook File Manager** row to
 the Omarchy Toggle menu (`SUPER+CTRL+O`). Select it to switch either way.
-It shows a ✓ while omanta is the default, so the menu doubles as a status
-check. If you remove the row, omanta won't add it back.
+It shows a ✓ while rook is the default, so the menu doubles as a status
+check. If you remove the row, rook won't add it back.
 
-omanta's **Preferences → Default File Manager** has the same controls:
-one switch makes omanta the default, the other shows or hides the
+rook's **Preferences → Default File Manager** has the same controls:
+one switch makes rook the default, the other shows or hides the
 Toggle-menu row.
 
 From a terminal:
 
 ```bash
-omanta-switch omanta     # make omanta the default
-omanta-switch nautilus   # back to stock
-omanta-switch toggle     # flip
-omanta-switch status     # what's active right now
+rook-switch rook     # make rook the default
+rook-switch nautilus   # back to stock
+rook-switch toggle     # flip
+rook-switch status     # what's active right now
 ```
 
-`omanta-switch install-menu` and `omanta-switch remove-menu` add and remove
+`rook-switch install-menu` and `rook-switch remove-menu` add and remove
 the Toggle-menu row. The row appears or disappears straight away, with no
 shell restart.
 
-Switching makes omanta (or Nautilus) the default everywhere at once:
+Switching makes rook (or Nautilus) the default everywhere at once:
 `SUPER+SHIFT+F`, folders opened from other apps, and double-clicked
 archives. It works by flipping the xdg-mime defaults and writing a
 managed, clearly-marked block to `~/.config/hypr/bindings.lua` —
 Omarchy's own files are never modified, no logout needed, and switching
 back restores your configuration byte-for-byte. It also drops a user-level
 D-Bus `.service` file for `org.freedesktop.FileManager1`, so "show in
-folder" from a browser starts omanta (with `--service`, no extra window)
+folder" from a browser starts rook (with `--service`, no extra window)
 instead of activating Nautilus when neither is running. One note:
 whichever file manager has windows open keeps that name until its last
-window closes, so close the other one's windows after switching; omanta
+window closes, so close the other one's windows after switching; rook
 takes the name over on its own once Nautilus exits.
 
 ## Uninstall
 
 ```bash
-omanta-switch nautilus && omanta-switch remove-menu   # stock default, no menu row
-sudo pacman -R omanta
+rook-switch nautilus && rook-switch remove-menu   # stock default, no menu row
+sudo pacman -R rook
 ```
 
 ## Requirements
@@ -216,7 +215,7 @@ Arch with Omarchy. Dependencies (`qt6-base`, `qt6-declarative`, `glib2`,
 `gvfs`, `libarchive`, `tinysparql`, `qt6-multimedia`, `qt6-webengine`) are
 all in Omarchy's default install or pulled automatically. The last two give
 the quick view audio/video and PDF pages; build with
-`-DOMANTA_WITH_MEDIA=OFF` / `-DOMANTA_WITH_PDF=OFF` to leave either out, and
+`-DROOK_WITH_MEDIA=OFF` / `-DROOK_WITH_PDF=OFF` to leave either out, and
 those types fall back to an info card. Optional: `gvfs-smb`/`gvfs-mtp`/`gvfs-gphoto2` for
 network shares, phones and cameras, `ffmpegthumbnailer` for video
 thumbnails, `localsearch` for full-text search.
@@ -226,7 +225,7 @@ thumbnails, `localsearch` for full-text search.
 These scripts work from any directory:
 
 ```bash
-./bin/build      # cmake + ninja into build/, then run ./build/omanta
+./bin/build      # cmake + ninja into build/, then run ./build/rook
 ./bin/test       # the headless suites (ctest, ~25s)
 ./bin/test-sanitizers # Clang ASan, UBSan and leak checks
 ./bin/install    # user-local install: ~/.local/bin symlink, desktop entry, icon

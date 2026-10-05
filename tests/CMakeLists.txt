@@ -8,7 +8,7 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Test QmlIntegration Quick DBus)
 # The sources are compiled into the tests rather than linked from a library:
 # the app target is a QML module, and pulling that in would drag the whole QML
 # runtime into what are meant to be headless model tests.
-function(omanta_test name)
+function(rook_test name)
     qt_add_executable(${name} ${name}.cpp ${ARGN})
     target_compile_definitions(${name} PRIVATE QT_NO_KEYWORDS)
     target_include_directories(${name} PRIVATE ${CMAKE_SOURCE_DIR}/src)
@@ -19,27 +19,27 @@ function(omanta_test name)
     set_tests_properties(${name} PROPERTIES TIMEOUT 120)
 endfunction()
 
-omanta_test(tst_quickview
+rook_test(tst_quickview
     ${CMAKE_SOURCE_DIR}/src/QuickViewInfo.cpp
     ${CMAKE_SOURCE_DIR}/src/Checksum.cpp
     ${CMAKE_SOURCE_DIR}/src/ArchiveEngine.cpp
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_directorymodel
+rook_test(tst_directorymodel
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryModel.cpp
     ${CMAKE_SOURCE_DIR}/src/FileEntry.cpp
 )
 
-omanta_test(tst_sortfilter
+rook_test(tst_sortfilter
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryModel.cpp
     ${CMAKE_SOURCE_DIR}/src/FileEntry.cpp
     ${CMAKE_SOURCE_DIR}/src/FileSortFilterModel.cpp
 )
 
-omanta_test(tst_navigation
+rook_test(tst_navigation
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/NavigationHistory.cpp
     ${CMAKE_SOURCE_DIR}/src/Platform.cpp
@@ -47,7 +47,7 @@ omanta_test(tst_navigation
     ${CMAKE_SOURCE_DIR}/src/ArchiveEngine.cpp
 )
 
-omanta_test(tst_fileoperations
+rook_test(tst_fileoperations
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperations.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperationWorker.cpp
@@ -56,45 +56,45 @@ omanta_test(tst_fileoperations
 
 # Source-tree scan, not a running window: the rule it enforces is a property
 # of the QML text, and a headless suite can check it in milliseconds.
-omanta_test(tst_qmltext)
-target_compile_definitions(tst_qmltext PRIVATE OMANTA_QML_DIR="${CMAKE_SOURCE_DIR}/qml")
+rook_test(tst_qmltext)
+target_compile_definitions(tst_qmltext PRIVATE ROOK_QML_DIR="${CMAKE_SOURCE_DIR}/qml")
 
-omanta_test(tst_thumbnails
+rook_test(tst_thumbnails
     ${CMAKE_SOURCE_DIR}/src/ThumbnailProvider.cpp
 )
 
-omanta_test(tst_properties
+rook_test(tst_properties
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/FileProperties.cpp
     ${CMAKE_SOURCE_DIR}/src/Applications.cpp
 )
 
-omanta_test(tst_openwith
+rook_test(tst_openwith
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/Platform.cpp
     ${CMAKE_SOURCE_DIR}/src/Applications.cpp
     ${CMAKE_SOURCE_DIR}/src/ArchiveEngine.cpp
 )
 
-omanta_test(tst_theme
+rook_test(tst_theme
     ${CMAKE_SOURCE_DIR}/src/SystemTheme.cpp
 )
 # The portal client is D-Bus; the test runs fine without a bus (calls just
 # error out) but the symbols still have to link.
 target_link_libraries(tst_theme PRIVATE Qt6::DBus)
 
-omanta_test(tst_places
+rook_test(tst_places
     ${CMAKE_SOURCE_DIR}/src/PlacesModel.cpp
     ${CMAKE_SOURCE_DIR}/src/Mounter.cpp
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_actions
+rook_test(tst_actions
     ${CMAKE_SOURCE_DIR}/src/UserActions.cpp
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_starred
+rook_test(tst_starred
     ${CMAKE_SOURCE_DIR}/src/StarredStore.cpp
     ${CMAKE_SOURCE_DIR}/src/StarredModel.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryModel.cpp
@@ -102,14 +102,14 @@ omanta_test(tst_starred
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_servers
+rook_test(tst_servers
     ${CMAKE_SOURCE_DIR}/src/ServerStore.cpp
     ${CMAKE_SOURCE_DIR}/src/NetworkModel.cpp
     ${CMAKE_SOURCE_DIR}/src/FileEntry.cpp
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_batchrename
+rook_test(tst_batchrename
     ${CMAKE_SOURCE_DIR}/src/BatchRenamer.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperations.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperationWorker.cpp
@@ -117,18 +117,18 @@ omanta_test(tst_batchrename
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_archives
+rook_test(tst_archives
     ${CMAKE_SOURCE_DIR}/src/ArchiveEngine.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperations.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperationWorker.cpp
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_settings
+rook_test(tst_settings
     ${CMAKE_SOURCE_DIR}/src/Settings.cpp
 )
 
-omanta_test(tst_tree
+rook_test(tst_tree
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryModel.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryTreeModel.cpp
@@ -136,7 +136,7 @@ omanta_test(tst_tree
     ${CMAKE_SOURCE_DIR}/src/FileSortFilterModel.cpp
 )
 
-omanta_test(tst_search
+rook_test(tst_search
     ${CMAKE_SOURCE_DIR}/src/SearchModel.cpp
     ${CMAKE_SOURCE_DIR}/src/FileSortFilterModel.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryModel.cpp
@@ -144,7 +144,7 @@ omanta_test(tst_search
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )
 
-omanta_test(tst_fts
+rook_test(tst_fts
     ${CMAKE_SOURCE_DIR}/src/SearchModel.cpp
     ${CMAKE_SOURCE_DIR}/src/FileSortFilterModel.cpp
     ${CMAKE_SOURCE_DIR}/src/DirectoryModel.cpp
@@ -158,25 +158,25 @@ add_test(NAME tst_qmlviews COMMAND tst_qmlviews)
 set_tests_properties(tst_qmlviews PROPERTIES TIMEOUT 60
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software")
 add_test(NAME tst_dropbox_helper COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tst_dropbox_helper.sh
-    ${CMAKE_SOURCE_DIR}/packaging/bin/omanta-dropbox-link)
+    ${CMAKE_SOURCE_DIR}/packaging/bin/rook-dropbox-link)
 
-# Drives the real packaging/bin/omanta-switch inside a throwaway XDG home.
-omanta_test(tst_switcher
+# Drives the real packaging/bin/rook-switch inside a throwaway XDG home.
+rook_test(tst_switcher
     ${CMAKE_SOURCE_DIR}/src/DefaultFileManager.cpp
     ${CMAKE_SOURCE_DIR}/src/Settings.cpp
 )
 target_compile_definitions(tst_switcher PRIVATE
-    OMANTA_SWITCH_SCRIPT="${CMAKE_SOURCE_DIR}/packaging/bin/omanta-switch"
-    OMANTA_DESKTOP_FILE="${CMAKE_SOURCE_DIR}/packaging/omanta.desktop")
+    ROOK_SWITCH_SCRIPT="${CMAKE_SOURCE_DIR}/packaging/bin/rook-switch"
+    ROOK_DESKTOP_FILE="${CMAKE_SOURCE_DIR}/packaging/rook.desktop")
 
-omanta_test(tst_faultrecovery
+rook_test(tst_faultrecovery
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperations.cpp
     ${CMAKE_SOURCE_DIR}/src/FileOperationWorker.cpp
     ${CMAKE_SOURCE_DIR}/src/ArchiveEngine.cpp
 )
 
-omanta_test(tst_mounter
+rook_test(tst_mounter
     ${CMAKE_SOURCE_DIR}/src/Mounter.cpp
     ${CMAKE_SOURCE_DIR}/src/Location.cpp
 )

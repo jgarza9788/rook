@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // The info panel (F11, vim `i`): docked on the right, about the current item
 // — or the folder itself when nothing is selected. A preview, the facts, the

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // Every dialog: the shared card with a slightly stronger accent frame, a
 // themed title, themed buttons, a soft dim behind, and the shared open

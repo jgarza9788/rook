@@ -1,9 +1,9 @@
 pragma Singleton
 
 import QtQuick
-import Omanta.Runtime
+import Rook.Runtime
 
-// What a file drag over omanta would do right now, shared by every drop
+// What a file drag over rook would do right now, shared by every drop
 // target and the label beside the pointer ("+ Copy to “Photos”").
 //
 // The action follows the modifiers, Nautilus's and Windows's convention:
@@ -26,7 +26,7 @@ QtObject {
     property real x: 0
     property real y: 0
     property var window: null
-    // omanta's own drag: the card ([▣ 5 items | Move]) is drawn by the
+    // rook's own drag: the card ([▣ 5 items | Move]) is drawn by the
     // window under the pointer, live, from these — the native drag picture
     // is blank, since Qt cannot change it mid-drag. False for drags from
     // other apps, which get a badge beside the pointer instead.

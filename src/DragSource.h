@@ -31,7 +31,7 @@ public:
     // is already running; finished(token, action) reports how it ended. The
     // drag runs on the next event-loop pass — never inside the caller's
     // handler. Its native picture is blank: the window under the pointer
-    // draws omanta's live card (DragState), which a fixed picture can't be.
+    // draws rook's live card (DragState), which a fixed picture can't be.
     Q_INVOKABLE int start(const QStringList &paths, const QPointF &hotSpot);
 
 Q_SIGNALS:

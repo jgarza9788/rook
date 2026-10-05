@@ -26,28 +26,28 @@ QStringList localPathsFromUris(const QStringList &uris)
 
 } // namespace
 
-OmantaAdaptor::OmantaAdaptor(Application *application)
+RookAdaptor::RookAdaptor(Application *application)
     : QDBusAbstractAdaptor(application)
     , m_application(application)
 {
 }
 
-int OmantaAdaptor::windowCount() const
+int RookAdaptor::windowCount() const
 {
     return m_application->windowCount();
 }
 
-void OmantaAdaptor::OpenPaths(const QStringList &paths, bool newWindow)
+void RookAdaptor::OpenPaths(const QStringList &paths, bool newWindow)
 {
     m_application->openPaths(paths, newWindow);
 }
 
-QVariantMap OmantaAdaptor::WindowState()
+QVariantMap RookAdaptor::WindowState()
 {
     return m_application->windowState();
 }
 
-void OmantaAdaptor::SelectPath(const QString &path)
+void RookAdaptor::SelectPath(const QString &path)
 {
     m_application->showItems({ path });
 }

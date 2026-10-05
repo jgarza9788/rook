@@ -195,13 +195,13 @@ void TestNavigation::crumbsStartAtHomeWhenUnderHome()
     Platform platform;
     const QString home = QDir::homePath();
 
-    const QVariantList crumbs = platform.pathCrumbs(home + QStringLiteral("/Projects/omanta"));
+    const QVariantList crumbs = platform.pathCrumbs(home + QStringLiteral("/Projects/rook"));
     QCOMPARE(crumbs.size(), 3);
     QCOMPARE(crumbs.at(0).toMap().value(QStringLiteral("label")).toString(), QStringLiteral("Home"));
     QCOMPARE(crumbs.at(0).toMap().value(QStringLiteral("path")).toString(), home);
     QCOMPARE(crumbs.at(1).toMap().value(QStringLiteral("label")).toString(), QStringLiteral("Projects"));
     QCOMPARE(crumbs.at(2).toMap().value(QStringLiteral("path")).toString(),
-             home + QStringLiteral("/Projects/omanta"));
+             home + QStringLiteral("/Projects/rook"));
 
     // Home itself is a single crumb.
     QCOMPARE(platform.pathCrumbs(home).size(), 1);
@@ -224,7 +224,7 @@ void TestNavigation::crumbsStartAtRootOtherwise()
 void TestNavigation::formatsSizes()
 {
     Platform platform;
-    // Delegated to GLib so omanta and every GTK app agree; just check it
+    // Delegated to GLib so rook and every GTK app agree; just check it
     // produces something sane rather than asserting exact wording.
     QVERIFY(!platform.formatSize(0).isEmpty());
     QVERIFY(platform.formatSize(1500).contains(QLatin1String("kB"))
@@ -359,10 +359,10 @@ void TestNavigation::templatesListsVisibleFilesSorted()
     write(QStringLiteral(".hidden.txt"));
     QVERIFY(QDir(dir.path()).mkdir(QStringLiteral("a-subdir"))); // dirs are not templates
 
-    qputenv("OMANTA_TEMPLATES_DIR", dir.path().toUtf8());
+    qputenv("ROOK_TEMPLATES_DIR", dir.path().toUtf8());
     Platform platform;
     const QVariantList list = platform.templates();
-    qunsetenv("OMANTA_TEMPLATES_DIR");
+    qunsetenv("ROOK_TEMPLATES_DIR");
 
     QCOMPARE(list.size(), 2);
     QCOMPARE(list.at(0).toMap().value("name").toString(), QStringLiteral("Spreadsheet.ods"));
@@ -373,10 +373,10 @@ void TestNavigation::templatesListsVisibleFilesSorted()
 
 void TestNavigation::templatesMissingDirIsEmpty()
 {
-    qputenv("OMANTA_TEMPLATES_DIR", "/no/such/templates/dir");
+    qputenv("ROOK_TEMPLATES_DIR", "/no/such/templates/dir");
     Platform platform;
     QCOMPARE(platform.templates().size(), 0);
-    qunsetenv("OMANTA_TEMPLATES_DIR");
+    qunsetenv("ROOK_TEMPLATES_DIR");
 }
 
 QTEST_GUILESS_MAIN(TestNavigation)
@@ -384,7 +384,7 @@ QTEST_GUILESS_MAIN(TestNavigation)
 
 void TestNavigation::activationExtractsOnlyWhenSelfIsDefault()
 {
-    // A private XDG world: omanta.desktop is the default for zip and
+    // A private XDG world: rook.desktop is the default for zip and
     // nothing else. Must run after every other GAppInfo-free test — GIO
     // snapshots these variables on first app-info use.
     QTemporaryDir world;
@@ -394,14 +394,14 @@ void TestNavigation::activationExtractsOnlyWhenSelfIsDefault()
 
     QFile apps(world.filePath("config/mimeapps.list"));
     QVERIFY(apps.open(QIODevice::WriteOnly));
-    apps.write("[Default Applications]\napplication/zip=omanta.desktop\n");
+    apps.write("[Default Applications]\napplication/zip=rook.desktop\n");
     apps.close();
 
     // GIO drops a desktop file whose Exec binary is not in PATH, so give
-    // the private world its own stub — the test must not depend on omanta
+    // the private world its own stub — the test must not depend on rook
     // being installed on the build machine.
     QDir().mkpath(world.filePath("bin"));
-    QFile stub(world.filePath("bin/omanta"));
+    QFile stub(world.filePath("bin/rook"));
     QVERIFY(stub.open(QIODevice::WriteOnly));
     stub.write("#!/bin/sh\nexit 0\n");
     stub.close();
@@ -409,10 +409,10 @@ void TestNavigation::activationExtractsOnlyWhenSelfIsDefault()
     qputenv("PATH", (world.filePath("bin") + QStringLiteral(":")
                      + qEnvironmentVariable("PATH")).toUtf8());
 
-    QFile desktop(world.filePath("share/applications/omanta.desktop"));
+    QFile desktop(world.filePath("share/applications/rook.desktop"));
     QVERIFY(desktop.open(QIODevice::WriteOnly));
     desktop.write("[Desktop Entry]\nType=Application\nName=Files\n"
-                  "Exec=omanta %U\nMimeType=application/zip;\n");
+                  "Exec=rook %U\nMimeType=application/zip;\n");
     desktop.close();
 
     qputenv("XDG_CONFIG_HOME", world.filePath("config").toUtf8());

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 import "Keymap.js" as Keymap
 
 // A window. Several tabs, one visible at a time, plus the chrome that acts on
@@ -2569,7 +2569,7 @@ Window {
         destination: ""
     }
 
-    // omanta's own drag: the one card, drawn here and live —
+    // rook's own drag: the one card, drawn here and live —
     //   [▣ 5 items | Move]
     // the right-hand section following Ctrl / Shift / Alt and the target
     // under the pointer (no section where a drop would do nothing).
@@ -2637,7 +2637,7 @@ Window {
         }
     }
 
-    // A drag from another app has no omanta card: a badge beside the
+    // A drag from another app has no rook card: a badge beside the
     // pointer says what a drop here would do.
     Rectangle {
         id: dragLabel

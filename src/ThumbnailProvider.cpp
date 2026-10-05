@@ -173,7 +173,7 @@ QString ThumbnailCache::failMarkerFor(const QString &filePath)
 {
     // Kept under our own name so a failure here never suppresses another
     // application's attempt, and vice versa.
-    return QStringLiteral("%1/fail/omanta/%2.png").arg(thumbnailRoot(), hashFor(filePath));
+    return QStringLiteral("%1/fail/rook/%2.png").arg(thumbnailRoot(), hashFor(filePath));
 }
 
 QImage ThumbnailCache::loadValid(const QString &filePath, int bucket)
@@ -199,7 +199,7 @@ QImage ThumbnailCache::loadValid(const QString &filePath, int bucket)
     const QString size = image.text(QStringLiteral("Thumb::Size"));
     if (!size.isEmpty() && size.toLongLong() != info.size())
         return {};
-    const QString msecs = image.text(QStringLiteral("X-Omanta::MTime-MSec"));
+    const QString msecs = image.text(QStringLiteral("X-Rook::MTime-MSec"));
     if (!msecs.isEmpty() && msecs.toLongLong() != info.lastModified().toMSecsSinceEpoch())
         return {};
 
@@ -229,8 +229,8 @@ void ThumbnailCache::store(const QString &filePath, int bucket, QImage image,
                   QString::number(QDateTime::fromMSecsSinceEpoch(rendered.modifiedMSecs)
                                       .toSecsSinceEpoch()));
     image.setText(QStringLiteral("Thumb::Size"), QString::number(rendered.size));
-    image.setText(QStringLiteral("X-Omanta::MTime-MSec"), QString::number(rendered.modifiedMSecs));
-    image.setText(QStringLiteral("Software"), QStringLiteral("omanta"));
+    image.setText(QStringLiteral("X-Rook::MTime-MSec"), QString::number(rendered.modifiedMSecs));
+    image.setText(QStringLiteral("Software"), QStringLiteral("rook"));
 
     savePrivatePng(cached, image);
 }
@@ -524,7 +524,7 @@ bool ThumbnailCache::sandboxAvailable()
         }
     }
     if (!g_sandboxWorks)
-        qWarning("omanta: bubblewrap (bwrap) is missing or cannot create a sandbox; "
+        qWarning("rook: bubblewrap (bwrap) is missing or cannot create a sandbox; "
                  "thumbnailers run unsandboxed");
     return g_sandboxWorks;
 }
@@ -535,7 +535,7 @@ QImage ThumbnailCache::runThumbnailer(QStringList argv, const QString &filePath,
         return {};
 
     // A directory of its own, so it is the only thing the sandbox can write.
-    QTemporaryDir outputDirectory(QDir::tempPath() + QStringLiteral("/omanta-thumb-XXXXXX"));
+    QTemporaryDir outputDirectory(QDir::tempPath() + QStringLiteral("/rook-thumb-XXXXXX"));
     if (!outputDirectory.isValid())
         return {};
     const QString output = outputDirectory.filePath(QStringLiteral("thumbnail.png"));

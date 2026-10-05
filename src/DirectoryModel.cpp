@@ -16,12 +16,12 @@ constexpr int kBatchSize = 256;
 // produces, short enough that the view still feels immediate.
 constexpr int kSettleMs = 40;
 
-// Set OMANTA_DEBUG_MODEL=1 to trace how the model reacts to disk changes.
+// Set ROOK_DEBUG_MODEL=1 to trace how the model reacts to disk changes.
 // This exists because "updates in place rather than reloading" is a claim that
 // is invisible from the outside otherwise — and therefore untestable.
 bool modelTracing()
 {
-    static const bool enabled = qEnvironmentVariableIsSet("OMANTA_DEBUG_MODEL");
+    static const bool enabled = qEnvironmentVariableIsSet("ROOK_DEBUG_MODEL");
     return enabled;
 }
 
@@ -233,7 +233,7 @@ void DirectoryModel::armMonitor(GFile *dir)
         m_monitorHandler = g_signal_connect(m_monitor, "changed",
                                             G_CALLBACK(&DirectoryModel::onMonitorChanged), this);
     } else {
-        qWarning("omanta: could not watch %s: %s", qUtf8Printable(m_path),
+        qWarning("rook: could not watch %s: %s", qUtf8Printable(m_path),
                  error ? error->message : "unknown");
         g_clear_error(&error);
     }

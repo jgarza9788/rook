@@ -67,7 +67,7 @@ bool Platform::activationExtracts(const QString &contentType) const
     if (!info)
         return false;
     const char *id = g_app_info_get_id(info);
-    const bool self = id && g_str_equal(id, "omanta.desktop");
+    const bool self = id && g_str_equal(id, "rook.desktop");
     g_object_unref(info);
     return self;
 }
@@ -96,7 +96,7 @@ QStringList Platform::supportedSchemes() const
 
 QVariantList Platform::templates() const
 {
-    QString dir = qEnvironmentVariable("OMANTA_TEMPLATES_DIR");
+    QString dir = qEnvironmentVariable("ROOK_TEMPLATES_DIR");
     if (dir.isEmpty()) {
         const char *xdg = g_get_user_special_dir(G_USER_DIRECTORY_TEMPLATES);
         dir = xdg ? QString::fromUtf8(xdg) : QDir::homePath() + QStringLiteral("/Templates");
@@ -257,7 +257,7 @@ bool Platform::openPath(const QString &path) const
     GError *error = nullptr;
     const bool ok = g_app_info_launch_default_for_uri(uri.constData(), nullptr, &error);
     if (!ok) {
-        qWarning("omanta: cannot open %s: %s", qUtf8Printable(path),
+        qWarning("rook: cannot open %s: %s", qUtf8Printable(path),
                  error ? error->message : "no handler");
     }
     g_clear_error(&error);
@@ -339,7 +339,7 @@ bool Platform::openTerminal(const QString &directory) const
             return true;
     }
 
-    qWarning("omanta: no terminal found (tried $TERMINAL, xdg-terminal-exec, x-terminal-emulator)");
+    qWarning("rook: no terminal found (tried $TERMINAL, xdg-terminal-exec, x-terminal-emulator)");
     return false;
 }
 

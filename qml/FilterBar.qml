@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // The in-folder filter, `/` in vim keys (Ctrl+Shift+S in classic). Narrows the
 // listing as you type: plain text, a glob when the text has * ? [, a regex

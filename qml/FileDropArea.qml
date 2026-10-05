@@ -1,5 +1,5 @@
 import QtQuick
-import Omanta.Runtime
+import Rook.Runtime
 
 // A place files can be dropped: a folder row or cell, a folder's background,
 // a sidebar place, a tab. Shows what the drop will do beside the pointer

@@ -138,7 +138,7 @@ QuickViewInfo::QuickViewInfo(QObject *parent)
 
 bool QuickViewInfo::hasMedia()
 {
-#ifdef OMANTA_HAVE_MULTIMEDIA
+#ifdef ROOK_HAVE_MULTIMEDIA
     return true;
 #else
     return false;
@@ -147,7 +147,7 @@ bool QuickViewInfo::hasMedia()
 
 bool QuickViewInfo::hasPdf()
 {
-#ifdef OMANTA_HAVE_PDF
+#ifdef ROOK_HAVE_PDF
     return true;
 #else
     return false;

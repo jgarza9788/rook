@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // A drop-down in the theme: a field that frames in the accent when focused
 // or open, and a list that opens as the shared card with the shared motion,

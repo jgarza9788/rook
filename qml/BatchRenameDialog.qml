@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // Nautilus's batch rename, F2 on a multi-selection: a template with
 // automatic numbering, or find-and-replace over the full name, previewed

@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 import "Keymap.js" as Keymap
 
 // Nautilus's Keyboard Shortcuts window (Ctrl+?, `?` in vim keys), as one

@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // Flat square button. Deliberately not a Controls Button — those carry a style
 // that fights the rest of the chrome.

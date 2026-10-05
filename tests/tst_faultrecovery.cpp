@@ -53,7 +53,7 @@ void TestFaultRecovery::transferFailure_data()
 
 void TestFaultRecovery::transferFailure()
 {
-    if (qEnvironmentVariable("OMANTA_TEST_FAULT_SANDBOX") != "1") {
+    if (qEnvironmentVariable("ROOK_TEST_FAULT_SANDBOX") != "1") {
         if (QStandardPaths::findExecutable("bwrap").isEmpty())
             QSKIP("Isolated full-disk tests require bubblewrap");
         QProcess child;
@@ -66,7 +66,7 @@ void TestFaultRecovery::transferFailure()
             "--tmpfs", "/tmp", "--dir", "/home/test",
             "--size", "2097152", "--tmpfs", "/limited",
             "--setenv", "HOME", "/home/test", "--setenv", "GIO_USE_VFS", "local",
-            "--setenv", "OMANTA_TEST_FAULT_SANDBOX", "1",
+            "--setenv", "ROOK_TEST_FAULT_SANDBOX", "1",
             "--ro-bind", QCoreApplication::applicationFilePath(), "/test",
             "--chdir", "/home/test", "/test",
             QString("transferFailure:%1").arg(QString::fromLatin1(QTest::currentDataTag()))

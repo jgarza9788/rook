@@ -8,7 +8,7 @@
 
 class QProcess;
 
-// The in-app face of omanta-switch: whether omanta is the default file
+// The in-app face of rook-switch: whether rook is the default file
 // manager, and whether the Omarchy Toggle menu (SUPER+CTRL+O) carries the row
 // that flips it. The script stays the one place that knows how to switch —
 // the same command a person can run by hand — and this only runs it and
@@ -42,7 +42,7 @@ public:
     QString lastError() const { return m_lastError; }
 
     Q_INVOKABLE void refresh();
-    Q_INVOKABLE void setDefault(bool omanta);
+    Q_INVOKABLE void setDefault(bool rook);
     Q_INVOKABLE void setMenuInstalled(bool installed);
 
     // First launch on Omarchy: add the Toggle-menu row, once. Only the row —

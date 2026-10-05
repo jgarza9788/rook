@@ -1,10 +1,10 @@
 pragma Singleton
 
 import QtQuick
-import Omanta.Runtime
+import Rook.Runtime
 
 // One place for every colour. When the active Omarchy theme's colors.toml is
-// present, all roles come from it — omanta then matches the terminal, the
+// present, all roles come from it — rook then matches the terminal, the
 // bar and every other themed surface, and follows `omarchy theme set` live.
 // Without it (non-Omarchy system), the built-in palette below tracks the
 // portal's light/dark setting instead.

@@ -13,7 +13,7 @@
 
 #include <sys/stat.h>
 
-// DefaultFileManager against the real omanta-switch script, in a throwaway
+// DefaultFileManager against the real rook-switch script, in a throwaway
 // XDG config/data home: nothing here may touch the desktop running the tests.
 class TestSwitcher : public QObject
 {
@@ -26,7 +26,7 @@ private Q_SLOTS:
     void installsIntoAHandWrittenMenu();
     void leavesOtherDesktopsAlone();
     void switchesTheDefaultBothWays();
-    void activationFallsBackWhenOmantaIsGone();
+    void activationFallsBackWhenRookIsGone();
     void keepsSymlinkedConfigsSymlinked();
     void unavailableWithoutTheScript();
 
@@ -47,10 +47,10 @@ void TestSwitcher::initTestCase()
 {
     if (QStandardPaths::findExecutable("xdg-mime").isEmpty()
         || QStandardPaths::findExecutable("perl").isEmpty())
-        QSKIP("omanta-switch needs xdg-mime and perl");
+        QSKIP("rook-switch needs xdg-mime and perl");
     // No Hyprland: the script would otherwise reload the live compositor.
     qunsetenv("HYPRLAND_INSTANCE_SIGNATURE");
-    qputenv("OMANTA_SWITCH", OMANTA_SWITCH_SCRIPT);
+    qputenv("ROOK_SWITCH", ROOK_SWITCH_SCRIPT);
 }
 
 void TestSwitcher::init()
@@ -62,7 +62,7 @@ void TestSwitcher::init()
     // The real entry's MimeType list, but an Exec that resolves anywhere:
     // xdg-mime ignores an entry whose binary is not on PATH.
     {
-        QFile source(OMANTA_DESKTOP_FILE);
+        QFile source(ROOK_DESKTOP_FILE);
         QVERIFY(source.open(QIODevice::ReadOnly));
         QByteArray entry = source.readAll();
         QStringList lines = QString::fromUtf8(entry).split(QLatin1Char('\n'));
@@ -70,12 +70,12 @@ void TestSwitcher::init()
             if (line.startsWith(QLatin1String("Exec=")))
                 line = QStringLiteral("Exec=/bin/sh %U");
         }
-        QFile copy(m_home->filePath("data/applications/omanta.desktop"));
+        QFile copy(m_home->filePath("data/applications/rook.desktop"));
         QVERIFY(copy.open(QIODevice::WriteOnly));
         copy.write(lines.join(QLatin1Char('\n')).toUtf8());
     }
     // Stock Omarchy pins Nautilus for folders. Without that, xdg-mime falls
-    // back to scanning desktop files and omanta, the only one here, wins.
+    // back to scanning desktop files and rook, the only one here, wins.
     {
         QFile mimeapps(m_home->filePath("config/mimeapps.list"));
         QVERIFY(mimeapps.open(QIODevice::WriteOnly));
@@ -88,12 +88,12 @@ void TestSwitcher::init()
         nautilus.write("[Desktop Entry]\nType=Application\nName=Files\nExec=/bin/sh\n"
                        "MimeType=inode/directory;\n");
     }
-    // The D-Bus activation file names the omanta binary; the script looks
+    // The D-Bus activation file names the rook binary; the script looks
     // beside itself, then on PATH, and a dev checkout has it in neither.
     // nautilus and busctl are stubbed too, so neither the fallback nor the
     // bus reload can reach the desktop running the tests.
     QVERIFY(QDir().mkpath(stubDir()));
-    for (const char *name : { "omanta", "nautilus", "busctl" }) {
+    for (const char *name : { "rook", "nautilus", "busctl" }) {
         QFile stub(stubDir() + QLatin1Char('/') + QLatin1String(name));
         QVERIFY(stub.open(QIODevice::WriteOnly));
         stub.write("#!/bin/sh\necho \"" + QByteArray(name) + " $*\" >> \"$STUB_LOG\"\n");
@@ -104,7 +104,7 @@ void TestSwitcher::init()
     qputenv("XDG_CONFIG_HOME", m_home->filePath("config").toUtf8());
     qputenv("XDG_DATA_HOME", m_home->filePath("data").toUtf8());
     qputenv("XDG_DATA_DIRS", m_home->filePath("data").toUtf8());
-    qputenv("OMANTA_SETTINGS_FILE", m_home->filePath("settings").toUtf8());
+    qputenv("ROOK_SETTINGS_FILE", m_home->filePath("settings").toUtf8());
 }
 
 void TestSwitcher::cleanup()
@@ -134,7 +134,7 @@ void TestSwitcher::offersTheToggleMenuOnceOnOmarchy()
     QVERIFY(settings.toggleMenuOffered());
     QFile menu(menuFile());
     QVERIFY(menu.open(QIODevice::ReadOnly));
-    QVERIFY(menu.readAll().contains("omanta-switch toggle"));
+    QVERIFY(menu.readAll().contains("rook-switch toggle"));
     menu.close();
 
     // Offering only adds the row; the default is still the person's call.
@@ -177,7 +177,7 @@ void TestSwitcher::installsIntoAHandWrittenMenu()
     QFile menu(menuFile());
     QVERIFY(menu.open(QIODevice::ReadOnly));
     const QByteArray contents = menu.readAll();
-    QCOMPARE(contents.count("omanta-switch toggle"), 1);
+    QCOMPARE(contents.count("rook-switch toggle"), 1);
     QVERIFY(contents.contains("\"some.entry\": {\"label\":\"A\"},\n"));
     QVERIFY(contents.contains("\"other.entry\": {\"label\":\"B\"}\n}"));
 }
@@ -213,15 +213,15 @@ void TestSwitcher::switchesTheDefaultBothWays()
     QVERIFY2(manager.isDefault(), qPrintable(manager.lastError()));
     QFile bindings(bindingsFile());
     QVERIFY(bindings.open(QIODevice::ReadOnly));
-    QVERIFY(bindings.readAll().contains("omanta-launch"));
+    QVERIFY(bindings.readAll().contains("rook-launch"));
     bindings.close();
-    // "Show in folder" with no file manager running activates omanta.
+    // "Show in folder" with no file manager running activates rook.
     QFile service(serviceFile());
     QVERIFY(service.open(QIODevice::ReadOnly));
     const QByteArray activation = service.readAll();
     service.close();
     QVERIFY(activation.contains("Name=org.freedesktop.FileManager1\n"));
-    QCOMPARE(runActivation(activation), QByteArray("omanta --service\n"));
+    QCOMPARE(runActivation(activation), QByteArray("rook --service\n"));
 
     manager.setDefault(false);
     QVERIFY(settle(manager));
@@ -295,7 +295,7 @@ void TestSwitcher::keepsSymlinkedConfigsSymlinked()
     QVERIFY(settle(manager));
     QVERIFY2(manager.isDefault(), qPrintable(manager.lastError()));
     QVERIFY(stillLinked(bindingsFile(), "bindings.lua"));
-    QVERIFY(contents("bindings.lua").contains("omanta-launch"));
+    QVERIFY(contents("bindings.lua").contains("rook-launch"));
 
     manager.setDefault(false);
     QVERIFY(settle(manager));
@@ -307,7 +307,7 @@ void TestSwitcher::keepsSymlinkedConfigsSymlinked()
     QVERIFY(settle(manager));
     QVERIFY2(manager.menuInstalled(), qPrintable(manager.lastError()));
     QVERIFY(stillLinked(menuFile(), "omarchy-menu.jsonc"));
-    QVERIFY(contents("omarchy-menu.jsonc").contains("omanta-switch toggle"));
+    QVERIFY(contents("omarchy-menu.jsonc").contains("rook-switch toggle"));
 
     manager.setMenuInstalled(false);
     QVERIFY(settle(manager));
@@ -318,7 +318,7 @@ void TestSwitcher::keepsSymlinkedConfigsSymlinked()
 
 // Uninstalled without switching back: the activation file must not keep
 // shadowing Nautilus with a binary that is gone.
-void TestSwitcher::activationFallsBackWhenOmantaIsGone()
+void TestSwitcher::activationFallsBackWhenRookIsGone()
 {
     DefaultFileManager manager;
     QVERIFY(settle(manager));
@@ -330,7 +330,7 @@ void TestSwitcher::activationFallsBackWhenOmantaIsGone()
     const QByteArray activation = service.readAll();
     service.close();
 
-    QVERIFY(QFile::remove(stubDir() + QLatin1String("/omanta")));
+    QVERIFY(QFile::remove(stubDir() + QLatin1String("/rook")));
     const QByteArray ran = runActivation(activation);
     QVERIFY(!QFile::exists(serviceFile()));
     QVERIFY2(ran.contains("busctl --user call org.freedesktop.DBus"), ran.constData());
@@ -339,7 +339,7 @@ void TestSwitcher::activationFallsBackWhenOmantaIsGone()
 
 void TestSwitcher::unavailableWithoutTheScript()
 {
-    qputenv("OMANTA_SWITCH", "/nonexistent/omanta-switch");
+    qputenv("ROOK_SWITCH", "/nonexistent/rook-switch");
     QVERIFY(QDir().mkpath(m_home->filePath("config/omarchy")));
     Settings settings;
     DefaultFileManager manager;
@@ -349,7 +349,7 @@ void TestSwitcher::unavailableWithoutTheScript()
     QVERIFY(!manager.busy());
     QVERIFY(!settings.toggleMenuOffered());
     QVERIFY(!QFile::exists(menuFile()));
-    qputenv("OMANTA_SWITCH", OMANTA_SWITCH_SCRIPT);
+    qputenv("ROOK_SWITCH", ROOK_SWITCH_SCRIPT);
 }
 
 QTEST_MAIN(TestSwitcher)

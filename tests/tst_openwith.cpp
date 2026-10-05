@@ -60,9 +60,9 @@ void TestOpenWith::refusesAnIdNotRegisteredForTheType()
 
     Platform platform;
     // The id comes back from QML; only the type's own handlers may launch.
-    QVERIFY(!platform.openWith(QStringLiteral("omanta-no-such-app.desktop"), { path }));
+    QVERIFY(!platform.openWith(QStringLiteral("rook-no-such-app.desktop"), { path }));
     QVERIFY(!platform.openWith(QString(), { path }));
-    QVERIFY(!platform.openWith(QStringLiteral("omanta-no-such-app.desktop"), {}));
+    QVERIFY(!platform.openWith(QStringLiteral("rook-no-such-app.desktop"), {}));
 }
 
 QTEST_GUILESS_MAIN(TestOpenWith)

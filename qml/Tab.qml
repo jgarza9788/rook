@@ -1,6 +1,6 @@
 import QtQuick
 import QtQuick.Controls
-import Omanta.Runtime
+import Rook.Runtime
 
 // One tab: a location, its history, its view state and its selection.
 // Everything a tab knows lives here, which is what lets windows hold several

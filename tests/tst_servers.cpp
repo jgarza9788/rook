@@ -75,7 +75,7 @@ private:
 
 void TestServers::initTestCase()
 {
-    qputenv("OMANTA_SERVERS_FILE", storeFile().toUtf8());
+    qputenv("ROOK_SERVERS_FILE", storeFile().toUtf8());
 }
 
 void TestServers::addsAndPersists()

@@ -1023,7 +1023,7 @@ void TestArchives::concurrentArchiveOutputIsPreserved()
         QVERIFY(!ok);
         QVERIFY(!error.isEmpty());
         QCOMPARE(read(target), QStringLiteral("unrelated file"));
-        QVERIFY(QDir(tree.path()).entryList({".omanta-compress-*"}, QDir::Dirs | QDir::Hidden).isEmpty());
+        QVERIFY(QDir(tree.path()).entryList({".rook-compress-*"}, QDir::Dirs | QDir::Hidden).isEmpty());
     }
 }
 

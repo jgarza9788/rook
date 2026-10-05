@@ -1,10 +1,10 @@
-# omanta — native Qt Quick/GIO file manager for Omarchy.
+# rook — native Qt Quick/GIO file manager for Omarchy.
 #
 # Builds the release commit, pinned by hash and checksummed: a tag can be
 # moved after the fact, a commit cannot. Releasing a new version means
 # updating pkgver, _commit (git rev-parse v$pkgver^{commit}) and the
 # checksum (makepkg -g), then publishing SHA256SUMS beside the package:
-#   sha256sum omanta-*.pkg.tar.zst > SHA256SUMS
+#   sha256sum rook-*.pkg.tar.zst > SHA256SUMS
 # For a local test build from your working tree, swap source= for
 # "$pkgname::git+file://<repo-path>", set sha256sums=('SKIP') and add back
 #   pkgver() { cd "$pkgname"; printf "0.r%s.%s" \
@@ -15,17 +15,17 @@
 # pacman would refuse to install alongside nautilus, which owns it. The
 # runtime claims the name only when free, so both coexist until cutover.
 
-pkgname=omanta
+pkgname=rook
 pkgver=0.1.23
 pkgrel=1
 pkgdesc="Native file manager for Omarchy (Qt Quick + GIO)"
 arch=('x86_64' 'aarch64')
-url="https://github.com/28allday/omanta"
+url="https://github.com/jgarza9788/rook"
 license=('MIT')
 install="$pkgname.install"
 # qt6-multimedia and qt6-webengine (Qt Pdf) power the quick view's audio/video
 # and PDF pages; they are linked when present at build time, so they are hard
-# dependencies of this package. -DOMANTA_WITH_MEDIA/PDF=OFF drops them.
+# dependencies of this package. -DROOK_WITH_MEDIA/PDF=OFF drops them.
 depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'glib2' 'gvfs' 'hicolor-icon-theme'
          'libarchive' 'tinysparql' 'qt6-multimedia' 'qt6-webengine')
 optdepends=('gvfs-smb: browse smb:// shares'
@@ -35,8 +35,10 @@ optdepends=('gvfs-smb: browse smb:// shares'
             'localsearch: full-text search'
             'sushi: Space previews through Sushi (Preferences → Space Previews With)')
 makedepends=('cmake' 'ninja' 'git')
-_commit=20fbae8b56b8f02547ff4d4486af541d4a646f2f # v0.1.23
-source=("$pkgname::git+https://github.com/28allday/omanta.git#commit=$_commit")
+# TODO first rook release: pin _commit to the rook release commit and
+# regenerate sha256sums with makepkg -g (the values below are omanta's v0.1.23).
+_commit=20fbae8b56b8f02547ff4d4486af541d4a646f2f # omanta v0.1.23
+source=("$pkgname::git+https://github.com/jgarza9788/rook.git#commit=$_commit")
 sha256sums=('3b316dfbda5bc940ac8588752b663b387b7d72d011a1420c4d01ea894ebd00be')
 
 build() {
@@ -45,7 +47,7 @@ build() {
     cmake -S "$pkgname" -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/usr \
-        -DOMANTA_BUILD_TESTS=OFF
+        -DROOK_BUILD_TESTS=OFF
     cmake --build build
 }
 

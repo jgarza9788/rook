@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // A file's checksum on request — SHA-256, SHA-1 or MD5 — with Copy and a
 // compare against whatever is on the clipboard (the line a download page

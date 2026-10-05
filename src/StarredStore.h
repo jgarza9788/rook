@@ -9,8 +9,8 @@ class QFileSystemWatcher;
 
 // Starred files — Nautilus parity for the sidebar's Starred entry.
 //
-// Nautilus keeps its stars in the tracker3 database; omanta keeps a plain
-// file (~/.config/omanta/starred, one absolute path per line) because a
+// Nautilus keeps its stars in the tracker3 database; rook keeps a plain
+// file (~/.config/rook/starred, one absolute path per line) because a
 // SPARQL dependency for a list of paths is absurd. The UX matches — star and
 // unstar from the context menu, a Starred place that lists them — but stars
 // do not carry over between the two file managers, and that is accepted.

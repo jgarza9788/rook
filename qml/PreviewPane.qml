@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // One item's preview, drawn by kind (QuickViewInfo decides which): image,
 // text, Markdown, folder or archive listing, audio/video, PDF, or an info

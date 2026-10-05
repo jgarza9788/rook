@@ -1,6 +1,6 @@
 import QtQuick
-import Omanta
-import Omanta.Runtime
+import Rook
+import Rook.Runtime
 
 // A native file drag with a bounded preview, independent of row/cell geometry.
 // The transparent parent keeps the card out of the view; grabToImage on the

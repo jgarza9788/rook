@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Omanta.Runtime
+import Rook.Runtime
 
 // Breadcrumbs, with Ctrl+L flipping to a plain editable path. Both halves are
 // always present; only one is visible, so focus handling stays simple.

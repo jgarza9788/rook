@@ -57,7 +57,7 @@ void TestPlaces::initTestCase()
     // nothing else visible. Fatal criticals turn that mistake into a failure.
     g_log_set_always_fatal(G_LOG_LEVEL_CRITICAL);
 
-    qputenv("OMANTA_BOOKMARKS_FILE",
+    qputenv("ROOK_BOOKMARKS_FILE",
             writeBookmarks(QStringLiteral("file:///tmp Scratch\n"
                                           "file:///var/log\n"
                                           "smb://server/share Media\n")).toUtf8());

@@ -93,11 +93,11 @@ UserActions::UserActions(QObject *parent)
 QStringList UserActions::actionDirs() const
 {
     // Test override first; otherwise user dir shadows the shipped dir.
-    const QString override = qEnvironmentVariable("OMANTA_ACTIONS_DIR");
+    const QString override = qEnvironmentVariable("ROOK_ACTIONS_DIR");
     if (!override.isEmpty())
         return { override };
-    return { QStringLiteral("/usr/share/omanta/actions"),
-             QDir::homePath() + QStringLiteral("/.config/omanta/actions") };
+    return { QStringLiteral("/usr/share/rook/actions"),
+             QDir::homePath() + QStringLiteral("/.config/rook/actions") };
 }
 
 void UserActions::reload()

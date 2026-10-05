@@ -12,7 +12,7 @@ class QFileSystemWatcher;
 // remembered here and offered again next time.
 //
 // Nautilus keeps its list in an XBEL file (~/.config/nautilus/servers);
-// omanta keeps a plain file (~/.config/omanta/servers, one URI per line)
+// rook keeps a plain file (~/.config/rook/servers, one URI per line)
 // for the same reason the starred store does — the format is a list of
 // strings, so the file is one. Connections do not carry over between the two
 // file managers, and that is accepted.

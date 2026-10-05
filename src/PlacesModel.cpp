@@ -616,7 +616,7 @@ void PlacesModel::removeBookmark(const QString &location)
 
 QString PlacesModel::bookmarksFilePath() const
 {
-    const QString override = qEnvironmentVariable("OMANTA_BOOKMARKS_FILE");
+    const QString override = qEnvironmentVariable("ROOK_BOOKMARKS_FILE");
     if (!override.isEmpty())
         return override;
     return QDir::homePath() + QStringLiteral("/.config/gtk-3.0/bookmarks");
