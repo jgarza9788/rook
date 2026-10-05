@@ -224,9 +224,33 @@ Config is plain TOML in `~/.config/rook/`; state and caches live in XDG state/ca
 
 ## Roadmap, risks & open questions
 
-&#91;embedded content: roadmap · 5 phases, not to scale\]
+**Done (2026-10-05):** palette foundation — command registry, palette overlay with
+commands, `/` path, `~` places, `@` filter, `?` search and `=` calc modes; slim
+top line, Vim-style status line, compact density, pane focus ring, one-accent
+theming, rook icon. Every feature below registers its commands in
+`qml/Commands.qml` first.
 
-Phase 1 is the accent because every later feature registers as a command; building features first means retrofitting them into the palette.
+**Tier 1 — build next (defines Rook)**
+
+1. **Rename Studio:** live preview, stackable rules, regex with capture groups, metadata tokens, edit-names-as-text mode (replaces omanta's basic batch rename).
+2. **Palette modes:** `@` filter with glob/regex/size/date, `>` shell command on the selection, `~` frecent folders. Most of the palette's power comes from these.
+3. **Preview pane:** in-app preview of code, images, PDF, archives and hex, replacing Sushi; works on every desktop.
+4. **Vim keymap preset:** hjkl, `yy`/`dd`/`pp`, marks, which-key overlay. Draws the tiling-WM crowd.
+
+**Tier 2 — pro layer**
+
+5. Dual-pane commander mode and Miller columns.
+6. Job queue: pause, resume and reorder jobs, with a conflict resolver (overwrite if newer, compare).
+7. Folder compare/sync between two panes.
+8. Embedded terminal that follows the current folder.
+9. Tags and saved searches as virtual folders.
+
+**Tier 3 — power-user extras**
+
+10. Scripting: `rook cmd <id>` from the CLI, JS scripts, macro recording.
+11. Duplicate finder, disk usage treemap, checksums.
+12. Metadata columns: EXIF, ID3, video duration, git status.
+13. Workspaces: save pane layout, tabs and paths together.
 
 **Risks**
 
