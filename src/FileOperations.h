@@ -87,15 +87,22 @@ public:
 
     // Archive the paths into archivePath (.zip / .tar.xz / .7z by extension).
     // Undo deletes the archive. Refuses to overwrite an existing file.
-    // A non-empty password writes an encrypted zip (zip only).
+    // A non-empty password writes an encrypted zip (zip only): AES-256, or
+    // ZipCrypto when legacyEncryption asks for Windows Explorer compatibility.
     Q_INVOKABLE void compress(const QStringList &paths, const QString &archivePath,
-                              const QString &password = QString());
+                              const QString &password = QString(),
+                              bool legacyEncryption = false);
 
     // The passphraseNeeded flow: an extract hit an encrypted archive, the
     // request is parked; the window asks, then either replays it with the
     // password or drops it.
     Q_INVOKABLE void providePassphrase(const QString &password);
     Q_INVOKABLE void declinePassphrase();
+
+    // The same parking for an extract that expanded far past its archive's
+    // size: the window asks, then replays it without the limit, or drops it.
+    Q_INVOKABLE void confirmLargeExtraction();
+    Q_INVOKABLE void declineLargeExtraction();
 
     // Extract each archive into destinationDir with Nautilus's landing rule
     // (single top-level entry as itself, else a folder named after the
@@ -138,6 +145,8 @@ Q_SIGNALS:
     void operationFinished(const QString &label);
     // An extract needs a password; the window shows the prompt.
     void passphraseNeeded(const QString &archiveName);
+    // An extract looks like a decompression bomb; the window asks.
+    void largeExtractionNeedsConfirmation(const QString &archiveName);
     void trashUnavailable(const QStringList &paths, QObject *requester);
 
     // Internal: hands work to the worker thread.
@@ -149,6 +158,8 @@ private Q_SLOTS:
     void handleFailure(quint64 id, const QString &message, const FileOperationResult &result);
     void handlePassphraseNeeded(quint64 id, const QString &archiveName,
                                 const FileOperationResult &completed);
+    void handleExpansionConfirmationNeeded(quint64 id, const QString &archiveName,
+                                           const FileOperationResult &completed);
 
 private:
     struct Pending {
@@ -178,7 +189,12 @@ private:
         FileOperationRequest request;
     };
 
+    enum class Prompt { Passphrase, LargeExpansion };
+
     void enqueue(const FileOperationRequest &request, QObject *requester = nullptr);
+    void park(const FileOperationResult &completed, Prompt prompt);
+    void dropParked();
+    QString waitingStatus() const;
     void enqueuePending(Pending pending);
     void startNext();
     void recordUndo(const FileOperationRequest &request, const FileOperationResult &result,
@@ -192,10 +208,12 @@ private:
 
     QQueue<Pending> m_queue;
     Pending m_current;
-    // The extract parked while the window asks for its password. The queue
-    // waits behind it, preserving one prompt and the partial undo journal.
-    bool m_awaitingPassphrase = false;
-    Pending m_passphrasePending;
+    // The extract parked while the window asks for its password (or for
+    // consent to a huge expansion). The queue waits behind it, preserving one
+    // prompt and the partial undo journal.
+    bool m_awaitingAnswer = false;
+    Prompt m_prompt = Prompt::Passphrase;
+    Pending m_parked;
     bool m_busy = false;
     quint64 m_nextId = 1;
 

@@ -12,21 +12,28 @@ The total is 80 files changed, with about 6,900 lines added and 370 removed.
 
 ---
 
-## 1. Security review (parked)
+## 1. Security review (fixed)
 
-A review of the code produced `todo.md`, which lists seven findings in order of severity. None of
-them is fixed yet:
+A review of the code produced `todo.md`, which lists seven findings in order of severity. All
+seven are fixed; `todo.md` records what was done for each and which tests cover it:
 
-1. Thumbnailers run without a sandbox (bubblewrap) on files they haven't been asked about.
-2. Images are decoded inside the app with no allocation limit.
-3. The thumbnail cache is created with permissions 0644/0755, and its files are written in place
-   instead of atomically.
-4. Archive encryption is ZipCrypto only, which is weak.
-5. Extraction keeps the permissions stored in the archive, and there's no protection against
-   decompression bombs.
-6. The PKGBUILD builds from a movable git tag with checksums skipped, and the release package is
-   unsigned.
-7. `omanta-switch` replaces symlinked config files (such as `bindings.lua`) with regular files.
+1. **Thumbnailers run inside bubblewrap:** no network, no session environment, the system
+   read-only, only the input readable and only a private output directory writable. If bwrap is
+   missing or can't create a sandbox, there's a one-time warning and they run unsandboxed.
+2. **Only PNG/JPEG/GIF/BMP are decoded in-process.** Other image formats go to a sandboxed
+   thumbnailer whenever one exists. Absurd header sizes are refused, and thumbnailer output is
+   read strictly as size-capped PNG.
+3. **The thumbnail cache is private and written atomically:** 0700 directories, 0600 files, written
+   with `QSaveFile`. Looser directories left by earlier runs are tightened.
+4. **Encrypted ZIP is AES-256.** ZipCrypto stays available as "Encrypted ZIP, legacy". libarchive
+   can't write encrypted 7z, so that isn't offered.
+5. **Extraction honours the umask and never keeps setuid/setgid/sticky or group/other write.** An
+   archive that expands past max(50× its size, 1 GiB) stops and asks "Extract Anyway?" for that one
+   archive. Running out of free space fails without asking.
+6. **The PKGBUILD pins the release commit with a real checksum.** The README checks the package
+   against `SHA256SUMS` before installing it.
+7. **`omanta-switch` writes through symlinked `bindings.lua` / `omarchy-menu.jsonc`**, keeping the
+   link and the file's mode.
 
 The review also checked parts of the code that turned out not to be problems: D-Bus callers,
 action TOML files, the SPARQL search, and how copies and moves are published.
@@ -195,6 +202,9 @@ action TOML files, the SPARQL search, and how copies and moves are published.
   - drag label and spring-loading;
   - a real drag gesture.
 - **Screenshot hooks:** `OMANTA_TEST_MENU_SCREENSHOT` and `OMANTA_TEST_POLISH_SHOTS`.
+- **Security fixes:** `tst_thumbnails` (sandbox, decode policy, cache permissions), `tst_archives`
+  (AES/legacy encryption, extraction modes, expansion and free-space guards, the confirmation
+  flow) and `tst_switcher` (symlinked configs).
 - **Flaky tests made stable:** status checks now wait for loading to finish. `tst_thumbnails` still
   fails now and then when the suites run in parallel; that problem predates this fork.
 

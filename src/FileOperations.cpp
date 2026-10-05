@@ -75,6 +75,8 @@ FileOperations::FileOperations(QObject *parent)
     connect(m_worker, &FileOperationWorker::failed, this, &FileOperations::handleFailure);
     connect(m_worker, &FileOperationWorker::passphraseNeeded,
             this, &FileOperations::handlePassphraseNeeded);
+    connect(m_worker, &FileOperationWorker::expansionConfirmationNeeded,
+            this, &FileOperations::handleExpansionConfirmationNeeded);
 
     m_thread.start();
 }
@@ -143,7 +145,7 @@ void FileOperations::enqueuePending(Pending pending)
         pending.originalRequest = pending.request;
     pending.id = m_nextId++;
     m_queue.enqueue(pending);
-    if (!m_busy && !m_awaitingPassphrase)
+    if (!m_busy && !m_awaitingAnswer)
         startNext();
     else
         Q_EMIT operationsChanged(); // startNext announces its own pick
@@ -152,13 +154,13 @@ void FileOperations::enqueuePending(Pending pending)
 QVariantList FileOperations::operations() const
 {
     QVariantList out;
-    if (m_busy || m_awaitingPassphrase) {
+    if (m_busy || m_awaitingAnswer) {
         QVariantMap running;
         running.insert(QStringLiteral("id"), double(m_current.id));
         running.insert(QStringLiteral("label"), m_current.request.describe());
-        running.insert(QStringLiteral("shortStatus"), m_awaitingPassphrase
-            ? QStringLiteral("Waiting for archive password") : m_current.request.shortStatus());
-        running.insert(QStringLiteral("state"), m_awaitingPassphrase
+        running.insert(QStringLiteral("shortStatus"), m_awaitingAnswer
+            ? waitingStatus() : m_current.request.shortStatus());
+        running.insert(QStringLiteral("state"), m_awaitingAnswer
             ? QStringLiteral("waiting") : QStringLiteral("running"));
         running.insert(QStringLiteral("progress"), m_progress);
         running.insert(QStringLiteral("detail"), m_currentDetail);
@@ -224,8 +226,8 @@ QString FileOperations::remainingText(qint64 done, qint64 total, qint64 elapsedM
 void FileOperations::cancelOperation(double id)
 {
     const quint64 wanted = quint64(id);
-    if (m_awaitingPassphrase && m_passphrasePending.id == wanted) {
-        declinePassphrase();
+    if (m_awaitingAnswer && m_parked.id == wanted) {
+        dropParked();
         return;
     }
     if (m_busy && m_current.id == wanted) {
@@ -244,7 +246,7 @@ void FileOperations::cancelOperation(double id)
 
 void FileOperations::startNext()
 {
-    if (m_awaitingPassphrase)
+    if (m_awaitingAnswer)
         return;
     if (m_queue.isEmpty()) {
         setBusy(false);
@@ -347,21 +349,42 @@ void FileOperations::handlePassphraseNeeded(quint64 id, const QString &archiveNa
 {
     if (id != m_current.id)
         return;
+    park(completed, Prompt::Passphrase);
+    m_parked.request.password.clear();
+    Q_EMIT passphraseNeeded(archiveName);
+}
 
+void FileOperations::handleExpansionConfirmationNeeded(quint64 id, const QString &archiveName,
+                                                      const FileOperationResult &completed)
+{
+    if (id != m_current.id)
+        return;
+    // The password (if any) stays: it was right, the archive is just huge.
+    park(completed, Prompt::LargeExpansion);
+    Q_EMIT largeExtractionNeedsConfirmation(archiveName);
+}
+
+void FileOperations::park(const FileOperationResult &completed, Prompt prompt)
+{
     // Keep one batch parked, including outputs already extracted. Only the
     // failing archive and its successors are retried. Queued work waits so a
-    // second password request cannot replace the first dialog's operation.
-    m_passphrasePending = m_current;
-    m_passphrasePending.completed.sources += completed.sources;
-    m_passphrasePending.completed.produced += completed.produced;
-    m_passphrasePending.completed.created += completed.created;
-    m_passphrasePending.request.sources = m_current.request.sources.mid(completed.sources.size());
-    m_passphrasePending.request.password.clear();
-    m_awaitingPassphrase = true;
+    // second prompt cannot replace the first dialog's operation.
+    m_parked = m_current;
+    m_parked.completed.sources += completed.sources;
+    m_parked.completed.produced += completed.produced;
+    m_parked.completed.created += completed.created;
+    m_parked.request.sources = m_current.request.sources.mid(completed.sources.size());
+    m_awaitingAnswer = true;
+    m_prompt = prompt;
     setBusy(false);
-    setStatus(QStringLiteral("Waiting for archive password"), 0.0);
+    setStatus(waitingStatus(), 0.0);
     Q_EMIT operationsChanged();
-    Q_EMIT passphraseNeeded(archiveName);
+}
+
+QString FileOperations::waitingStatus() const
+{
+    return m_prompt == Prompt::Passphrase ? QStringLiteral("Waiting for archive password")
+                                          : QStringLiteral("Waiting for confirmation");
 }
 
 void FileOperations::recordUndo(const FileOperationRequest &request,
@@ -495,8 +518,8 @@ void FileOperations::redo()
 void FileOperations::cancel()
 {
     m_queue.clear();
-    if (m_awaitingPassphrase)
-        declinePassphrase();
+    if (m_awaitingAnswer)
+        dropParked();
     if (m_worker)
         m_worker->requestCancel();
     Q_EMIT operationsChanged();
@@ -557,7 +580,7 @@ void FileOperations::createLink(const QStringList &paths, const QString &destina
 }
 
 void FileOperations::compress(const QStringList &paths, const QString &archivePath,
-                              const QString &password)
+                              const QString &password, bool legacyEncryption)
 {
     if (paths.isEmpty() || archivePath.isEmpty())
         return;
@@ -566,6 +589,7 @@ void FileOperations::compress(const QStringList &paths, const QString &archivePa
     request.sources = paths;
     request.destination = archivePath;
     request.password = password;
+    request.legacyEncryption = legacyEncryption;
     enqueue(request);
 }
 
@@ -573,11 +597,11 @@ void FileOperations::compress(const QStringList &paths, const QString &archivePa
 // window asks for the password, then replays with it — or is dropped.
 void FileOperations::providePassphrase(const QString &password)
 {
-    if (!m_awaitingPassphrase)
+    if (!m_awaitingAnswer || m_prompt != Prompt::Passphrase)
         return;
-    m_awaitingPassphrase = false;
-    Pending pending = m_passphrasePending;
-    m_passphrasePending = Pending();
+    m_awaitingAnswer = false;
+    Pending pending = m_parked;
+    m_parked = Pending();
     pending.request.password = password;
     m_queue.prepend(pending);
     startNext();
@@ -585,15 +609,40 @@ void FileOperations::providePassphrase(const QString &password)
 
 void FileOperations::declinePassphrase()
 {
-    if (!m_awaitingPassphrase)
+    if (m_prompt == Prompt::Passphrase)
+        dropParked();
+}
+
+void FileOperations::confirmLargeExtraction()
+{
+    if (!m_awaitingAnswer || m_prompt != Prompt::LargeExpansion)
         return;
-    m_awaitingPassphrase = false;
+    m_awaitingAnswer = false;
+    Pending pending = m_parked;
+    m_parked = Pending();
+    // The parked request starts at the archive that was asked about.
+    pending.request.largeExpansionAllowedFor = pending.request.sources.value(0);
+    m_queue.prepend(pending);
+    startNext();
+}
+
+void FileOperations::declineLargeExtraction()
+{
+    if (m_prompt == Prompt::LargeExpansion)
+        dropParked();
+}
+
+void FileOperations::dropParked()
+{
+    if (!m_awaitingAnswer)
+        return;
+    m_awaitingAnswer = false;
     // Completed archives still form one undoable operation when the rest of
     // the batch is declined; redo repeats only that completed portion.
-    FileOperationRequest completed = m_passphrasePending.originalRequest;
-    completed.sources = m_passphrasePending.completed.sources;
-    recordUndo(completed, m_passphrasePending.completed);
-    m_passphrasePending = Pending();
+    FileOperationRequest completed = m_parked.originalRequest;
+    completed.sources = m_parked.completed.sources;
+    recordUndo(completed, m_parked.completed);
+    m_parked = Pending();
     startNext();
 }
 

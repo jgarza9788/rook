@@ -87,6 +87,10 @@ struct FileOperationRequest
     // Compress: encrypt the zip with this. Extract: unlock with this.
     // Never appears in describe()/shortStatus() or any log.
     QString password;
+    // Compress: legacy ZipCrypto instead of AES-256 (an explicit choice).
+    bool legacyEncryption = false;
+    // Extract: the one archive the user agreed may expand unusually far.
+    QString largeExpansionAllowedFor;
 
     QString describe() const;
     // The live, progressive form for the sidebar indicator — Nautilus's

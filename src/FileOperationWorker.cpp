@@ -192,7 +192,8 @@ void FileOperationWorker::prepare()
 void FileOperationWorker::run(const FileOperationRequest &request, quint64 id)
 {
     m_needsPassphrase = false;
-    m_passphraseArchive.clear();
+    m_needsExpansionConfirmation = false;
+    m_promptArchive.clear();
 
     FileOperationResult result;
     QString error;
@@ -255,7 +256,9 @@ void FileOperationWorker::run(const FileOperationRequest &request, quint64 id)
     if (ok)
         Q_EMIT succeeded(id, result);
     else if (m_needsPassphrase)
-        Q_EMIT passphraseNeeded(id, m_passphraseArchive, result);
+        Q_EMIT passphraseNeeded(id, m_promptArchive, result);
+    else if (m_needsExpansionConfirmation)
+        Q_EMIT expansionConfirmationNeeded(id, m_promptArchive, result);
     else
         Q_EMIT failed(id, error.isEmpty() ? QStringLiteral("Operation failed") : error, result);
 }
@@ -468,7 +471,9 @@ bool FileOperationWorker::doCompress(const FileOperationRequest &request,
             throttle.restart();
             Q_EMIT progressed(id, done, total, QFileInfo(request.destination).fileName());
         },
-        request.password);
+        request.password,
+        request.legacyEncryption ? ArchiveEngine::ZipEncryption::ZipCrypto
+                                 : ArchiveEngine::ZipEncryption::Aes256);
     if (ok) {
         result.sources = request.sources;
         result.produced << request.destination;
@@ -482,8 +487,13 @@ bool FileOperationWorker::doExtract(const FileOperationRequest &request,
     QElapsedTimer throttle;
     throttle.start();
     for (const QString &archive : request.sources) {
+        // Consent covers the archive it was asked about, not the rest of
+        // the batch.
+        ArchiveEngine::ExtractLimits limits = ArchiveEngine::defaultExtractLimits();
+        limits.allowLargeExpansion = archive == request.largeExpansionAllowedFor;
         QString produced;
         bool needsPassphrase = false;
+        bool needsExpansionConfirmation = false;
         const bool ok = ArchiveEngine::extract(
             archive, request.destination, &produced, error,
             [this] { return bool(g_cancellable_is_cancelled(m_cancellable)); },
@@ -493,13 +503,15 @@ bool FileOperationWorker::doExtract(const FileOperationRequest &request,
                 throttle.restart();
                 Q_EMIT progressed(id, done, total, QFileInfo(archive).fileName());
             },
-            request.password, &needsPassphrase, &result.created);
+            request.password, &needsPassphrase, &result.created, limits,
+            &needsExpansionConfirmation);
         // Fail fast, but report what already landed — like a partial trash,
         // the completed extractions are real and stay.
         if (!ok) {
-            if (needsPassphrase) {
-                m_needsPassphrase = true;
-                m_passphraseArchive = QFileInfo(archive).fileName();
+            if (needsPassphrase || needsExpansionConfirmation) {
+                m_needsPassphrase = needsPassphrase;
+                m_needsExpansionConfirmation = needsExpansionConfirmation;
+                m_promptArchive = QFileInfo(archive).fileName();
             }
             return false;
         }

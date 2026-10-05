@@ -5,7 +5,9 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
+#include <QLocale>
 #include <QSet>
+#include <QStorageInfo>
 #include <QTemporaryDir>
 
 #include <archive.h>
@@ -250,9 +252,15 @@ bool isArchiveContentType(const QString &contentType)
     return types.contains(contentType);
 }
 
+ExtractLimits &defaultExtractLimits()
+{
+    static ExtractLimits limits;
+    return limits;
+}
+
 bool compress(const QStringList &sources, const QString &archivePath, QString *error,
               const Cancelled &cancelled, const Progress &progress,
-              const QString &password)
+              const QString &password, ZipEncryption encryption)
 {
     if (sources.isEmpty()) {
         *error = QStringLiteral("Nothing to compress");
@@ -285,16 +293,18 @@ bool compress(const QStringList &sources, const QString &archivePath, QString *e
         return false;
     }
 
-    // Encrypted zip: zipcrypt, what Nautilus (autoar) writes — weak but
-    // universally readable, incl. Windows Explorer. Only the zip writer
-    // accepts a passphrase here; the dialog only offers it for zip.
+    // Encrypted zip: AES-256 unless ZipCrypto (what Nautilus/autoar writes:
+    // universally readable, trivially attacked) was asked for by name. Only
+    // the zip writer accepts a passphrase here; the dialog only offers zip.
     if (!password.isEmpty()) {
         if (!archivePath.endsWith(QStringLiteral(".zip"), Qt::CaseInsensitive)) {
             *error = QStringLiteral("Only zip archives can be encrypted");
             archive_write_free(writer);
             return false;
         }
-        if (archive_write_set_options(writer, "zip:encryption=zipcrypt") != ARCHIVE_OK
+        const char *option = encryption == ZipEncryption::ZipCrypto
+            ? "zip:encryption=zipcrypt" : "zip:encryption=aes256";
+        if (archive_write_set_options(writer, option) != ARCHIVE_OK
             || archive_write_set_passphrase(writer, password.toUtf8().constData())
                != ARCHIVE_OK) {
             *error = archiveError(writer, "Could not set up encryption");
@@ -364,10 +374,13 @@ bool compress(const QStringList &sources, const QString &archivePath, QString *e
 
 bool extract(const QString &archivePath, const QString &destinationDir, QString *produced,
              QString *error, const Cancelled &cancelled, const Progress &progress,
-             const QString &password, bool *needsPassphrase, QList<CreatedEntry> *created)
+             const QString &password, bool *needsPassphrase, QList<CreatedEntry> *created,
+             const ExtractLimits &limits, bool *needsExpansionConfirmation)
 {
     if (needsPassphrase)
         *needsPassphrase = false;
+    if (needsExpansionConfirmation)
+        *needsExpansionConfirmation = false;
     const QFileInfo archiveInfo(archivePath);
     const qint64 archiveBytes = archiveInfo.size();
     const int extAt = archiveExtensionOffset(archiveInfo.fileName());
@@ -410,6 +423,16 @@ bool extract(const QString &archivePath, const QString &destinationDir, QString 
         return false;
     }
 
+    // Written through our own disk writer rather than archive_read_extract,
+    // so the expansion guard and cancellation can act between data blocks —
+    // a single entry can be the whole bomb.
+    struct archive *disk = archive_write_disk_new();
+    // No ARCHIVE_EXTRACT_PERM: the umask applies and libarchive drops
+    // setuid/setgid/sticky, as tar does for an ordinary user.
+    archive_write_disk_set_options(disk, ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_SECURE_SYMLINKS
+                                             | ARCHIVE_EXTRACT_SECURE_NODOTDOT);
+    archive_write_disk_set_standard_lookup(disk);
+
     const auto bail = [&](const QString &message) {
         *error = message;
         // libarchive reports both "Passphrase required for this entry" and
@@ -417,12 +440,20 @@ bool extract(const QString &archivePath, const QString &destinationDir, QString 
         // not an error dialog.
         if (needsPassphrase && message.contains(QStringLiteral("assphrase")))
             *needsPassphrase = true;
+        archive_write_free(disk);
         archive_read_free(reader);
         return false;
     };
 
-    const int flags = ARCHIVE_EXTRACT_TIME | ARCHIVE_EXTRACT_PERM
-        | ARCHIVE_EXTRACT_SECURE_SYMLINKS | ARCHIVE_EXTRACT_SECURE_NODOTDOT;
+    // Past this the user is asked; past the free space, refused outright
+    // (leaving a little room, so the disk is never filled to the last byte).
+    const qint64 expansionLimit = qMax(limits.expansionRatio * qMax<qint64>(archiveBytes, 1),
+                                       limits.expansionFloorBytes);
+    const qint64 available = limits.availableBytes >= 0
+        ? limits.availableBytes : QStorageInfo(destinationDir).bytesAvailable();
+    const qint64 spaceLimit = available > 0
+        ? available - qMin<qint64>(64LL * 1024 * 1024, available / 2) : -1;
+    qint64 written = 0;
 
     while (true) {
         if (cancelled())
@@ -453,18 +484,65 @@ bool extract(const QString &archivePath, const QString &destinationDir, QString 
                 entry, QDir(staging).filePath(QDir::cleanPath(linkPath)).toUtf8().constData());
         }
 
-        if (archive_read_extract(reader, entry, flags) < ARCHIVE_OK) {
-            // ZipCrypto checks a password against one byte, so about one
-            // wrong password in 256 gets through and the garbage it decrypts
-            // fails later as a data error. On an encrypted entry read with a
-            // password, that is still a wrong password.
+        // Group/other write never comes from an archive, whatever the umask
+        // would allow; the special bits are stripped here too, not only by
+        // libarchive's default.
+        archive_entry_set_perm(entry, archive_entry_perm(entry) & 0777 & ~(S_IWGRP | S_IWOTH));
+
+        // ZipCrypto checks a password against one byte, so about one wrong
+        // password in 256 gets through and the garbage it decrypts fails
+        // later as a data error. On an encrypted entry read with a password,
+        // that is still a wrong password.
+        const auto failEntry = [&](struct archive *source, const char *fallback) {
             if (needsPassphrase && !password.isEmpty() && archive_entry_is_data_encrypted(entry))
                 *needsPassphrase = true;
-            return bail(archiveError(reader, "Could not extract the archive"));
+            return bail(archiveError(source, fallback));
+        };
+
+        // Warnings fail the entry too, as archive_read_extract did.
+        if (archive_write_header(disk, entry) != ARCHIVE_OK)
+            return failEntry(disk, "Could not extract the archive");
+
+        if (!archive_entry_size_is_set(entry) || archive_entry_size(entry) > 0) {
+            while (true) {
+                const void *block = nullptr;
+                size_t size = 0;
+                la_int64_t offset = 0;
+                const int read = archive_read_data_block(reader, &block, &size, &offset);
+                if (read == ARCHIVE_EOF)
+                    break;
+                if (read != ARCHIVE_OK)
+                    return failEntry(reader, "Could not extract the archive");
+                if (cancelled())
+                    return bail(QStringLiteral("Cancelled"));
+
+                written += qint64(size);
+                if (!limits.allowLargeExpansion && written > expansionLimit) {
+                    if (needsExpansionConfirmation)
+                        *needsExpansionConfirmation = true;
+                    return bail(QStringLiteral("“%1” expands to more than %2 — refusing")
+                                    .arg(archiveInfo.fileName(),
+                                         QLocale().formattedDataSize(
+                                             expansionLimit, 1, QLocale::DataSizeSIFormat)));
+                }
+                if (spaceLimit >= 0 && written > spaceLimit)
+                    return bail(QStringLiteral("Not enough free space to extract “%1”")
+                                    .arg(archiveInfo.fileName()));
+
+                if (archive_write_data_block(disk, block, size, offset) != ARCHIVE_OK)
+                    return failEntry(disk, "Could not extract the archive");
+            }
         }
+        if (archive_write_finish_entry(disk) != ARCHIVE_OK)
+            return failEntry(disk, "Could not extract the archive");
 
         progress(archive_filter_bytes(reader, -1), archiveBytes);
     }
+    // Closing applies the deferred directory times and modes; until then a
+    // directory's timestamps are still the extraction's.
+    if (archive_write_close(disk) != ARCHIVE_OK)
+        return bail(archiveError(disk, "Could not extract the archive"));
+    archive_write_free(disk);
     archive_read_free(reader);
 
     const QFileInfoList topLevel = QDir(staging).entryInfoList(

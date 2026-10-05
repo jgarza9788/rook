@@ -44,6 +44,15 @@ MENU_END="// <<< omanta-switch managed block"
 
 die() { echo "omanta-switch: $*" >&2; exit 1; }
 
+# Rewrites a file in place from a temporary copy. Writing into it, rather
+# than renaming over it (mv, sed -i), keeps a symlink into a dotfiles repo a
+# symlink and keeps the file's own mode — mktemp's 0600 never carries over.
+replace_contents() {
+    local tmp="$1" target="$2"
+    cat "$tmp" > "$target"
+    rm -f "$tmp"
+}
+
 find_desktop_file() {
     local dir IFS=:
     for dir in "${XDG_DATA_HOME:-$HOME/.local/share}" ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do
@@ -91,7 +100,7 @@ remove_bindings_block() {
         /^$/ { blanks++; next }
         { for (; blanks > 0; blanks--) print ""; print }
     ' "$BINDINGS_FILE" > "$tmp"
-    mv "$tmp" "$BINDINGS_FILE"
+    replace_contents "$tmp" "$BINDINGS_FILE"
 }
 
 add_bindings_block() {
@@ -174,7 +183,11 @@ validate_menu_file() {
 
 remove_menu_block() {
     [ -f "$MENU_FILE" ] || return 0
-    sed -i "\#^  $MENU_BEGIN\$#,\#^  $MENU_END\$#d" "$MENU_FILE"
+    grep -qF -- "$MENU_BEGIN" "$MENU_FILE" || return 0
+    local tmp
+    tmp="$(mktemp)"
+    sed "\#^  $MENU_BEGIN\$#,\#^  $MENU_END\$#d" "$MENU_FILE" > "$tmp"
+    replace_contents "$tmp" "$MENU_FILE"
 }
 
 add_menu_block() {

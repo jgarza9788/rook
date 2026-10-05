@@ -1591,8 +1591,34 @@ Window {
         onClosed: root.returnFocusToView()
     }
 
+    // An extract expanded far past its archive's size: a likely zip bomb.
+    // Closing without confirming (Cancel, Escape) drops it.
+    ConfirmDialog {
+        id: largeExtractionConfirm
+
+        property bool answered: false
+
+        confirmText: qsTr("Extract Anyway")
+        detail: qsTr("It expands to far more than its own size — archives built to fill the disk look like this. Nothing from it has been extracted yet.")
+        onAboutToShow: answered = false
+        onConfirmed: {
+            answered = true;
+            FileOperations.confirmLargeExtraction();
+        }
+        onClosed: {
+            if (!answered)
+                FileOperations.declineLargeExtraction();
+            root.returnFocusToView();
+        }
+    }
+
     Connections {
         target: FileOperations
+        function onLargeExtractionNeedsConfirmation(archiveName) {
+            largeExtractionConfirm.message =
+                qsTr("Extract \u201c%1\u201d?").arg(archiveName);
+            largeExtractionConfirm.open();
+        }
         function onPassphraseNeeded(archiveName) {
             passphraseDialog.prompt =
                 qsTr("\u201c%1\u201d is password-protected. Enter the password:")

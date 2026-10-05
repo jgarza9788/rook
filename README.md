@@ -135,16 +135,20 @@ and F6 moves the selection into the other pane; Ctrl+F6 switches panes.
 
 ## Install
 
-Grab the package from the [latest release](https://github.com/28allday/omanta/releases)
-and install it:
+Grab the package and its checksum file from the
+[latest release](https://github.com/28allday/omanta/releases), check it, and
+install it:
 
 ```bash
 curl -LO https://github.com/28allday/omanta/releases/download/v0.1.23/omanta-0.1.23-1-x86_64.pkg.tar.zst
+curl -LO https://github.com/28allday/omanta/releases/download/v0.1.23/SHA256SUMS
+sha256sum -c --ignore-missing SHA256SUMS   # must print "OK"
 sudo pacman -U omanta-0.1.23-1-x86_64.pkg.tar.zst
 ```
 
 (The package is unsigned, so pacman won't install it straight from a URL —
-download it first and install the local file.)
+download it first, check it against `SHA256SUMS`, and install the local
+file. Don't install it if the check fails.)
 
 Or build it yourself:
 

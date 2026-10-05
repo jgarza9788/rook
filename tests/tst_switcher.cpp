@@ -11,6 +11,8 @@
 
 #include <memory>
 
+#include <sys/stat.h>
+
 // DefaultFileManager against the real omanta-switch script, in a throwaway
 // XDG config/data home: nothing here may touch the desktop running the tests.
 class TestSwitcher : public QObject
@@ -25,6 +27,7 @@ private Q_SLOTS:
     void leavesOtherDesktopsAlone();
     void switchesTheDefaultBothWays();
     void activationFallsBackWhenOmantaIsGone();
+    void keepsSymlinkedConfigsSymlinked();
     void unavailableWithoutTheScript();
 
 private:
@@ -247,6 +250,70 @@ QByteArray TestSwitcher::runActivation(const QByteArray &activation) const
         return {};
     QFile log(stubLog());
     return log.open(QIODevice::ReadOnly) ? log.readAll() : QByteArray();
+}
+
+// Config kept in a dotfiles repo and symlinked into place: switching both
+// ways, and adding and removing the menu row, must edit the real file through
+// the link — never replace the link with a copy — and keep its mode.
+void TestSwitcher::keepsSymlinkedConfigsSymlinked()
+{
+    const QString dotfiles = m_home->filePath("dotfiles");
+    QVERIFY(QDir().mkpath(dotfiles));
+    QVERIFY(QDir().mkpath(m_home->filePath("config/hypr")));
+    QVERIFY(QDir().mkpath(m_home->filePath("config/omarchy/extensions")));
+    const QByteArray bindings = "-- mine\no.bind(\"SUPER + X\", \"Thing\", \"thing\")\n";
+    const QByteArray menu = "{\n  \"some.entry\": {\"label\":\"A\"}\n}\n";
+    const auto plant = [&](const QString &name, const QByteArray &contents,
+                           const QString &linkPath) {
+        const QString real = dotfiles + QLatin1Char('/') + name;
+        QFile file(real);
+        if (!file.open(QIODevice::WriteOnly) || file.write(contents) != contents.size())
+            return false;
+        file.close();
+        return ::chmod(QFile::encodeName(real).constData(), 0640) == 0
+            && QFile::link(real, linkPath);
+    };
+    QVERIFY(plant("bindings.lua", bindings, bindingsFile()));
+    QVERIFY(plant("omarchy-menu.jsonc", menu, menuFile()));
+
+    const auto stillLinked = [&](const QString &linkPath, const QString &name) {
+        const QFileInfo info(linkPath);
+        struct stat st;
+        const QString real = dotfiles + QLatin1Char('/') + name;
+        return info.isSymLink() && info.symLinkTarget() == real
+            && ::stat(QFile::encodeName(real).constData(), &st) == 0
+            && (st.st_mode & 0777) == 0640;
+    };
+    const auto contents = [&](const QString &name) {
+        QFile file(dotfiles + QLatin1Char('/') + name);
+        return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+    };
+
+    DefaultFileManager manager;
+    QVERIFY(settle(manager));
+    manager.setDefault(true);
+    QVERIFY(settle(manager));
+    QVERIFY2(manager.isDefault(), qPrintable(manager.lastError()));
+    QVERIFY(stillLinked(bindingsFile(), "bindings.lua"));
+    QVERIFY(contents("bindings.lua").contains("omanta-launch"));
+
+    manager.setDefault(false);
+    QVERIFY(settle(manager));
+    QVERIFY(!manager.isDefault());
+    QVERIFY2(stillLinked(bindingsFile(), "bindings.lua"), "switching back replaced the symlink");
+    QCOMPARE(contents("bindings.lua"), bindings);
+
+    manager.setMenuInstalled(true);
+    QVERIFY(settle(manager));
+    QVERIFY2(manager.menuInstalled(), qPrintable(manager.lastError()));
+    QVERIFY(stillLinked(menuFile(), "omarchy-menu.jsonc"));
+    QVERIFY(contents("omarchy-menu.jsonc").contains("omanta-switch toggle"));
+
+    manager.setMenuInstalled(false);
+    QVERIFY(settle(manager));
+    QVERIFY(!manager.menuInstalled());
+    QVERIFY2(stillLinked(menuFile(), "omarchy-menu.jsonc"), "remove-menu replaced the symlink");
+    QCOMPARE(contents("omarchy-menu.jsonc"), menu);
 }
 
 // Uninstalled without switching back: the activation file must not keep

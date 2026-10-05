@@ -69,6 +69,23 @@ public:
     static QImage renderImageFile(const QString &filePath, int size);
     static QImage renderViaThumbnailer(const QString &filePath, const QString &mimeType, int size);
 
+    // Image types trusted to Qt's in-process readers. Anything else goes to
+    // a sandboxed thumbnailer whenever one handles it.
+    static bool decodesInProcess(const QString &mimeType);
+
+    // Thumbnailers parse whatever lands in a viewed folder, unclicked, so
+    // they run under bubblewrap: no network, a clean environment, the system
+    // read-only, only `input` readable and only `outputDirectory` writable.
+    // Empty when bwrap is not installed.
+    static QStringList sandboxedCommand(const QStringList &command, const QString &input,
+                                        const QString &outputDirectory);
+    // Whether bwrap is installed AND can build a sandbox here (user
+    // namespaces may be disabled). Probed once; warns once when it cannot.
+    static bool sandboxAvailable();
+    // Runs one thumbnailer Exec template (%i %u %o %s) for filePath —
+    // sandboxed when possible — and returns its validated output.
+    static QImage runThumbnailer(QStringList argv, const QString &filePath, int size);
+
 private:
     static void ensureRegistryLoaded();
 };

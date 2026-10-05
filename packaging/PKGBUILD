@@ -1,7 +1,12 @@
 # omanta — native Qt Quick/GIO file manager for Omarchy.
 #
-# Builds from the release tag. For a local test build from your working
-# tree, swap source= for "$pkgname::git+file://<repo-path>" and add back
+# Builds the release commit, pinned by hash and checksummed: a tag can be
+# moved after the fact, a commit cannot. Releasing a new version means
+# updating pkgver, _commit (git rev-parse v$pkgver^{commit}) and the
+# checksum (makepkg -g), then publishing SHA256SUMS beside the package:
+#   sha256sum omanta-*.pkg.tar.zst > SHA256SUMS
+# For a local test build from your working tree, swap source= for
+# "$pkgname::git+file://<repo-path>", set sha256sums=('SKIP') and add back
 #   pkgver() { cd "$pkgname"; printf "0.r%s.%s" \
 #     "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"; }
 #
@@ -30,8 +35,9 @@ optdepends=('gvfs-smb: browse smb:// shares'
             'localsearch: full-text search'
             'sushi: Space previews through Sushi (Preferences → Space Previews With)')
 makedepends=('cmake' 'ninja' 'git')
-source=("$pkgname::git+https://github.com/28allday/omanta.git#tag=v$pkgver")
-sha256sums=('SKIP')
+_commit=20fbae8b56b8f02547ff4d4486af541d4a646f2f # v0.1.23
+source=("$pkgname::git+https://github.com/28allday/omanta.git#commit=$_commit")
+sha256sums=('3b316dfbda5bc940ac8588752b663b387b7d72d011a1420c4d01ea894ebd00be')
 
 build() {
     # Tests off: the public tree carries them, but a package build has no

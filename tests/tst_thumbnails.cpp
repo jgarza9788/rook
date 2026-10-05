@@ -2,9 +2,11 @@
 #include "ThumbnailProvider.h"
 
 #include <QCryptographicHash>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QImage>
 #include <QPainter>
+#include <QProcess>
 #include <QStandardPaths>
 #include <QQuickImageResponse>
 #include <QSignalSpy>
@@ -12,6 +14,8 @@
 #include <QUrl>
 
 #include <memory>
+
+#include <sys/stat.h>
 
 // Thumbnails, tested against the freedesktop spec rather than against my
 // assumptions about it. Two of these exist because the first working build got
@@ -42,6 +46,17 @@ private Q_SLOTS:
     void detectsTypeByContentNotExtension();
     void canThumbnailRespectsTypeAndSize();
 
+    void cacheFilesArePrivate();
+    void cacheDirectoriesAreTightened();
+    void cacheWritesLeaveNoTemporaries();
+    void onlyCoreFormatsDecodeInProcess();
+    void refusesAbsurdDimensionsFromTheHeader();
+    void sandboxCommandConfinesTheThumbnailer();
+    void thumbnailerRunsInTheSandbox();
+    void rejectsHostileThumbnailerOutput();
+    void userInstalledThumbnailersStillRun();
+    void rendersRealFilesThroughTheSandbox();
+
 private:
     static QString writeImage(const TempTree &tree, const QString &name, int w, int h)
     {
@@ -55,6 +70,53 @@ private:
         // and this helper is deliberately used to write files without one.
         image.save(path, "png");
         return path;
+    }
+
+    // A PNG whose header claims a size no real image has; the body is junk.
+    static QString writeGiantHeader(const TempTree &tree, const QString &name)
+    {
+        const auto crc32 = [](const QByteArray &data) {
+            quint32 crc = 0xffffffffu;
+            for (const char byte : data) {
+                crc ^= quint8(byte);
+                for (int bit = 0; bit < 8; ++bit)
+                    crc = (crc >> 1) ^ (0xedb88320u & (0u - (crc & 1u)));
+            }
+            return ~crc;
+        };
+        const auto be32 = [](quint32 value) {
+            QByteArray out(4, 0);
+            for (int i = 0; i < 4; ++i)
+                out[i] = char(value >> (24 - 8 * i));
+            return out;
+        };
+        const auto chunk = [&](const QByteArray &type, const QByteArray &data) {
+            return be32(quint32(data.size())) + type + data + be32(crc32(type + data));
+        };
+        QByteArray ihdr = be32(100000) + be32(100000);
+        ihdr += QByteArray::fromHex("0802000000"); // 8-bit RGB
+        const QByteArray png = QByteArray::fromHex("89504e470d0a1a0a") + chunk("IHDR", ihdr)
+            + chunk("IDAT", QByteArray(64, 'x')) + chunk("IEND", {});
+        const QString path = tree.filePath(name);
+        QFile file(path);
+        if (!file.open(QIODevice::WriteOnly))
+            return {};
+        file.write(png);
+        return path;
+    }
+
+    static int modeOf(const QString &path)
+    {
+        struct stat st;
+        return ::stat(QFile::encodeName(path).constData(), &st) == 0 ? int(st.st_mode & 07777) : -1;
+    }
+
+    // Copies its input to its output: the smallest honest thumbnailer.
+    static QStringList copyingThumbnailer()
+    {
+        return { QStringLiteral("/bin/sh"), QStringLiteral("-c"),
+                 QStringLiteral("cp \"$1\" \"$2\""), QStringLiteral("sh"),
+                 QStringLiteral("%i"), QStringLiteral("%o") };
     }
 };
 
@@ -306,6 +368,244 @@ void TestThumbnails::canThumbnailRespectsTypeAndSize()
 
     thumbnails.setEnabled(false);
     QVERIFY(!thumbnails.canThumbnail(QStringLiteral("image/jpeg"), 1000));
+}
+
+void TestThumbnails::cacheFilesArePrivate()
+{
+    // Thumbnails are small copies of private pictures: the spec makes them
+    // 0600 in 0700 directories, whatever the umask says.
+    const mode_t previous = ::umask(022);
+    // From an empty cache, so creating the directories is what is tested,
+    // not tightening ones an earlier run left. Test mode: never the real one.
+    const QString root = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)
+        + QStringLiteral("/thumbnails");
+    QVERIFY2(root.contains(QStringLiteral("/.qttest/")), qPrintable(root));
+    QDir(root).removeRecursively();
+    TempTree tree;
+    const QString path = writeImage(tree, QStringLiteral("private.png"), 200, 200);
+    ThumbnailCache::store(path, 128, ThumbnailCache::render(path, QStringLiteral("image/png"), 128));
+    const QString cached = ThumbnailCache::cachePathFor(path, 128);
+    QVERIFY(QFile::exists(cached));
+    QCOMPARE(modeOf(cached), 0600);
+    QCOMPARE(modeOf(QFileInfo(cached).absolutePath()), 0700);
+    QCOMPARE(modeOf(QFileInfo(cached).absolutePath() + QStringLiteral("/..")), 0700);
+
+    ThumbnailCache::markFailed(path);
+    const QString marker = ThumbnailCache::failMarkerFor(path);
+    QVERIFY(QFile::exists(marker));
+    QCOMPARE(modeOf(marker), 0600);
+    QCOMPARE(modeOf(QFileInfo(marker).absolutePath()), 0700);
+    QCOMPARE(modeOf(QFileInfo(marker).absolutePath() + QStringLiteral("/..")), 0700);
+    ::umask(previous);
+}
+
+void TestThumbnails::cacheDirectoriesAreTightened()
+{
+    // A cache made under the umask by an older build (or another app) is
+    // brought back to 0700 the next time a thumbnail is written into it.
+    TempTree tree;
+    const QString path = writeImage(tree, QStringLiteral("loose.png"), 100, 100);
+    const QString bucket = QFileInfo(ThumbnailCache::cachePathFor(path, 512)).absolutePath();
+    QVERIFY(QDir().mkpath(bucket));
+    QVERIFY(::chmod(QFile::encodeName(bucket).constData(), 0755) == 0);
+    ThumbnailCache::store(path, 512, ThumbnailCache::render(path, QStringLiteral("image/png"), 512));
+    QCOMPARE(modeOf(bucket), 0700);
+}
+
+void TestThumbnails::cacheWritesLeaveNoTemporaries()
+{
+    // Written to a temporary and renamed into place: nothing but the
+    // finished PNG may be left beside it, and a rewrite replaces it whole.
+    TempTree tree;
+    const QString path = writeImage(tree, QStringLiteral("atomic.png"), 120, 80);
+    const QString cached = ThumbnailCache::cachePathFor(path, 1024);
+    QFile::remove(cached);
+    const QDir bucket(QFileInfo(cached).absolutePath());
+    const QStringList before = bucket.exists() ? bucket.entryList(QDir::Files | QDir::Hidden)
+                                               : QStringList();
+    for (int i = 0; i < 2; ++i)
+        ThumbnailCache::store(path, 1024,
+                              ThumbnailCache::render(path, QStringLiteral("image/png"), 1024));
+    QStringList added = bucket.entryList(QDir::Files | QDir::Hidden);
+    for (const QString &name : before)
+        added.removeAll(name);
+    QCOMPARE(added, QStringList { QFileInfo(cached).fileName() });
+    QVERIFY(!ThumbnailCache::loadValid(path, 1024).isNull());
+}
+
+void TestThumbnails::onlyCoreFormatsDecodeInProcess()
+{
+    for (const char *type : { "image/png", "image/jpeg", "image/gif", "image/bmp" })
+        QVERIFY2(ThumbnailCache::decodesInProcess(QString::fromLatin1(type)), type);
+    // Plugin decoders a hostile file could aim at stay out of the process
+    // whenever a sandboxed thumbnailer can take them.
+    for (const char *type : { "image/tiff", "image/webp", "image/heif", "image/svg+xml",
+                              "image/jp2", "image/x-icns", "image/x-tga" })
+        QVERIFY2(!ThumbnailCache::decodesInProcess(QString::fromLatin1(type)), type);
+}
+
+void TestThumbnails::refusesAbsurdDimensionsFromTheHeader()
+{
+    // 100000×100000 is 40GB of pixels: refused before anything is allocated
+    // for it — and quickly. (The header check and Qt's allocation limit both
+    // stop this one; the header check also covers decoders that allocate
+    // outside Qt's accounting.)
+    TempTree tree;
+    const QString path = writeGiantHeader(tree, QStringLiteral("giant.png"));
+    QElapsedTimer timer;
+    timer.start();
+    QVERIFY(ThumbnailCache::renderImageFile(path, 256).isNull());
+    QVERIFY(ThumbnailCache::render(path, QStringLiteral("image/png"), 256).isNull());
+    QVERIFY2(timer.elapsed() < 5000, "the header alone must decide");
+}
+
+void TestThumbnails::sandboxCommandConfinesTheThumbnailer()
+{
+    if (QStandardPaths::findExecutable(QStringLiteral("bwrap")).isEmpty()) {
+        QVERIFY(ThumbnailCache::sandboxedCommand({ QStringLiteral("x") }, QString(), QString())
+                    .isEmpty());
+        QSKIP("bwrap is not installed");
+    }
+    const QStringList command = ThumbnailCache::sandboxedCommand(
+        { QStringLiteral("thumbnailer"), QStringLiteral("--flag") },
+        QStringLiteral("/data/in.mp4"), QStringLiteral("/tmp/out-dir"));
+    QVERIFY(command.first().endsWith(QStringLiteral("/bwrap")));
+    for (const char *flag : { "--unshare-all", "--die-with-parent", "--clearenv", "--new-session" })
+        QVERIFY2(command.contains(QString::fromLatin1(flag)), flag);
+
+    // The input read-only, the output directory the only writable bind.
+    const auto bound = [&](const QString &kind, const QString &path) {
+        for (int i = 0; i + 2 < command.size(); ++i) {
+            if (command.at(i) == kind && command.at(i + 1) == path && command.at(i + 2) == path)
+                return true;
+        }
+        return false;
+    };
+    QVERIFY(bound(QStringLiteral("--ro-bind"), QStringLiteral("/data/in.mp4")));
+    QVERIFY(bound(QStringLiteral("--bind"), QStringLiteral("/tmp/out-dir")));
+    QCOMPARE(command.count(QStringLiteral("--bind")), 1);
+    QVERIFY(!command.contains(QStringLiteral("--share-net")));
+    QVERIFY(!command.contains(QDir::homePath()));
+
+    // The thumbnailer's own argv comes last, untouched, after "--".
+    const int separator = command.indexOf(QStringLiteral("--"));
+    QVERIFY(separator > 0);
+    QCOMPARE(command.mid(separator + 1),
+             QStringList({ QStringLiteral("thumbnailer"), QStringLiteral("--flag") }));
+}
+
+void TestThumbnails::thumbnailerRunsInTheSandbox()
+{
+    if (!ThumbnailCache::sandboxAvailable())
+        QSKIP("bwrap cannot build a sandbox here");
+
+    TempTree tree;
+    const QString path = writeImage(tree, QStringLiteral("input.png"), 300, 200);
+
+    // A thumbnailer that probes its cage before doing honest work: it must
+    // see no session environment, no network but loopback and no home
+    // directory. Writing beside its input lands in the sandbox's own tmpfs
+    // (bwrap builds the input's parents there), never in the real folder.
+    qputenv("OMANTA_TEST_SECRET", "leaked");
+    const QString probe = QStringLiteral(
+        "[ -z \"$OMANTA_TEST_SECRET\" ] || exit 3; "
+        "[ \"$(grep -c : /proc/net/dev)\" -eq 1 ] || exit 4; "
+        "[ ! -e \"$3\" ] || exit 5; "
+        "touch \"$(dirname \"$1\")/escaped\" 2>/dev/null; "
+        "cp \"$1\" \"$2\"");
+    const QImage thumb = ThumbnailCache::runThumbnailer(
+        { QStringLiteral("/bin/sh"), QStringLiteral("-c"), probe, QStringLiteral("sh"),
+          QStringLiteral("%i"), QStringLiteral("%o"), QDir::homePath() },
+        path, 128);
+    qunsetenv("OMANTA_TEST_SECRET");
+
+    QVERIFY2(!thumb.isNull(), "the sandboxed thumbnailer failed one of its checks");
+    QVERIFY(thumb.width() <= 128 && thumb.height() <= 128);
+    QVERIFY(!QFile::exists(tree.filePath(QStringLiteral("escaped"))));
+}
+
+void TestThumbnails::userInstalledThumbnailersStillRun()
+{
+    // A thumbnailer living outside /usr (here, a script in a temp "bin", as
+    // ~/.local/bin would be) is resolved from the session's PATH and let in
+    // read-only on its own.
+    TempTree tree;
+    const QString script = tree.filePath(QStringLiteral("bin/my-thumbnailer"));
+    QDir().mkpath(QFileInfo(script).absolutePath());
+    {
+        QFile file(script);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write("#!/bin/sh\ncp \"$1\" \"$2\"\n");
+    }
+    QVERIFY(QFile::setPermissions(script, QFileDevice::ReadOwner | QFileDevice::WriteOwner
+                                              | QFileDevice::ExeOwner));
+    const QByteArray path = qgetenv("PATH");
+    qputenv("PATH", QFile::encodeName(QFileInfo(script).absolutePath()) + ':' + path);
+    const QString input = writeImage(tree, QStringLiteral("in.png"), 200, 100);
+    const QImage thumb = ThumbnailCache::runThumbnailer(
+        { QStringLiteral("my-thumbnailer"), QStringLiteral("%i"), QStringLiteral("%o") },
+        input, 128);
+    qputenv("PATH", path);
+    QVERIFY2(!thumb.isNull(), "a thumbnailer outside /usr must still run");
+}
+
+void TestThumbnails::rejectsHostileThumbnailerOutput()
+{
+    // Whatever a thumbnailer writes is as untrusted as what it read.
+    TempTree tree;
+
+    // An honest PNG comes back, scaled to the bucket.
+    const QString honest = writeImage(tree, QStringLiteral("honest.png"), 600, 300);
+    const QImage scaled = ThumbnailCache::runThumbnailer(copyingThumbnailer(), honest, 128);
+    QVERIFY(!scaled.isNull());
+    QVERIFY(scaled.width() <= 128 && scaled.height() <= 128);
+
+    // A header claiming 100000² is refused before decoding.
+    const QString giant = writeGiantHeader(tree, QStringLiteral("giant.png"));
+    QVERIFY(ThumbnailCache::runThumbnailer(copyingThumbnailer(), giant, 128).isNull());
+
+    // Anything but PNG is refused, whatever plugin could read it.
+    QImage bitmap(64, 64, QImage::Format_RGB32);
+    bitmap.fill(Qt::red);
+    const QString bmp = tree.filePath(QStringLiteral("not-a-png.bmp"));
+    QVERIFY(bitmap.save(bmp, "bmp"));
+    QVERIFY(ThumbnailCache::runThumbnailer(copyingThumbnailer(), bmp, 128).isNull());
+
+    // A failing thumbnailer yields nothing at all.
+    QVERIFY(ThumbnailCache::runThumbnailer({ QStringLiteral("/bin/false") }, honest, 128).isNull());
+}
+
+void TestThumbnails::rendersRealFilesThroughTheSandbox()
+{
+    // The installed thumbnailers must still work inside the cage — a
+    // sandbox that breaks them would just trade previews for safety.
+    TempTree tree;
+
+    // A TIFF: an exotic type, so a sandboxed thumbnailer takes it when one
+    // handles TIFF, and Qt's reader otherwise. Either way it previews.
+    QImage picture(320, 200, QImage::Format_RGB32);
+    picture.fill(Qt::darkGreen);
+    const QString tiff = tree.filePath(QStringLiteral("scan.tiff"));
+    if (picture.save(tiff, "tiff")) {
+        const QImage thumb = ThumbnailCache::render(tiff, QStringLiteral("image/tiff"), 128);
+        QVERIFY2(!thumb.isNull(), "a TIFF must still get a thumbnail");
+        QVERIFY(thumb.width() > thumb.height());
+    }
+
+    if (QStandardPaths::findExecutable(QStringLiteral("ffmpeg")).isEmpty()
+        || !ThumbnailCache::canHandle(QStringLiteral("video/mp4")))
+        QSKIP("ffmpeg or a video thumbnailer is not installed");
+    const QString video = tree.filePath(QStringLiteral("clip with spaces.mp4"));
+    QProcess ffmpeg;
+    ffmpeg.start(QStringLiteral("ffmpeg"),
+                 { QStringLiteral("-loglevel"), QStringLiteral("error"), QStringLiteral("-f"),
+                   QStringLiteral("lavfi"), QStringLiteral("-i"),
+                   QStringLiteral("testsrc=duration=1:size=320x240"), video });
+    QVERIFY(ffmpeg.waitForFinished(30000));
+    QCOMPARE(ffmpeg.exitCode(), 0);
+    const QImage thumb = ThumbnailCache::render(video, QStringLiteral("video/mp4"), 128);
+    QVERIFY2(!thumb.isNull(), "a video must still get a thumbnail");
+    QVERIFY(thumb.width() <= 128 && thumb.height() <= 128);
 }
 
 QTEST_MAIN(TestThumbnails)

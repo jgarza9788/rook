@@ -42,6 +42,10 @@ Q_SIGNALS:
     // so the window can ask and replay rather than show an error.
     void passphraseNeeded(quint64 id, const QString &archiveName,
                           const FileOperationResult &completed);
+    // An extract expanded far past the archive's size (a likely zip bomb) —
+    // instead of failed(), so the window can ask before going on.
+    void expansionConfirmationNeeded(quint64 id, const QString &archiveName,
+                                     const FileOperationResult &completed);
 
 private:
     struct PlanItem {
@@ -79,8 +83,10 @@ private:
     bool deleteRecursively(GFile *file, QString *error);
 
     GCancellable *m_cancellable = nullptr;
-    // Set by doExtract when the failure is a missing/wrong archive password;
-    // run() turns it into passphraseNeeded() instead of failed().
+    // Set by doExtract when the failure is a missing/wrong archive password
+    // or an expansion needing consent; run() turns it into passphraseNeeded()
+    // or expansionConfirmationNeeded() instead of failed().
     bool m_needsPassphrase = false;
-    QString m_passphraseArchive;
+    bool m_needsExpansionConfirmation = false;
+    QString m_promptArchive;
 };

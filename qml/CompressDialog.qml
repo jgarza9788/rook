@@ -4,7 +4,8 @@ import Omanta.Runtime
 
 // Nautilus's "Compress Files and Folders": archive name, compression method
 // with its compatibility note, refused while the name is taken or invalid.
-// Encrypted ZIP is Nautilus's fourth method: zipcrypt with a password field.
+// Encrypted ZIP is AES-256; the legacy ZipCrypto method (what Nautilus writes)
+// stays available, labelled, for Windows Explorer compatibility.
 OmDialog {
     id: root
 
@@ -26,7 +27,10 @@ OmDialog {
         { label: qsTr("7Z (.7z)"), extension: ".7z",
           note: qsTr("Smaller archives but must be installed on Windows and Mac.") },
         { label: qsTr("Encrypted ZIP (.zip)"), extension: ".zip", encrypted: true,
-          note: qsTr("Password-protected. Compatible with all operating systems.") },
+          note: qsTr("Password-protected with AES-256. Opens with 7-Zip, WinRAR and current Windows; older Windows Explorer needs 7-Zip.") },
+        { label: qsTr("Encrypted ZIP, legacy (.zip)"), extension: ".zip", encrypted: true,
+          legacy: true,
+          note: qsTr("ZipCrypto: opens anywhere, including older Windows Explorer, but the password protection is easily broken.") },
     ]
 
     readonly property bool wantsPassword: formats[formatIndex].encrypted === true
@@ -66,7 +70,8 @@ OmDialog {
         if (!ready)
             return;
         FileOperations.compress(paths, directory + "/" + archiveName,
-                                wantsPassword ? passwordField.text : "");
+                                wantsPassword ? passwordField.text : "",
+                                wantsPassword && formats[formatIndex].legacy === true);
         close();
     }
 
@@ -143,8 +148,8 @@ OmDialog {
                 font.pixelSize: 12
             }
 
-            // Radios rather than Nautilus's combo row: three options do not
-            // need a dropdown, and the note reads better always visible.
+            // Radios rather than Nautilus's combo row: a handful of options
+            // does not need a dropdown, and the note reads better always visible.
             Repeater {
                 id: formatRepeater
                 model: root.formats

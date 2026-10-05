@@ -9,12 +9,17 @@
 #include <QProcess>
 #include <QQuickImageResponse>
 #include <QRunnable>
+#include <QSaveFile>
+#include <QSet>
 #include <QStandardPaths>
-#include <QTemporaryFile>
+#include <QTemporaryDir>
 #include <QThreadPool>
 #include <QUrl>
 
 #include <gio/gio.h>
+
+#include <sys/stat.h>
+#include <cerrno>
 
 namespace {
 
@@ -40,6 +45,100 @@ QString uriFor(const QString &filePath)
 {
     return QString::fromLatin1(QUrl::fromLocalFile(filePath).toEncoded());
 }
+
+// The spec wants the cache private: thumbnails are miniature copies of
+// whatever the user looks at. 0700 from the thumbnail root down; a directory
+// an older build (or another application) made under the umask is tightened.
+bool makePrivateDirectory(const QString &directory)
+{
+    const QByteArray native = QFile::encodeName(directory);
+    if (::mkdir(native.constData(), 0700) == 0)
+        return true;
+    if (errno != EEXIST)
+        return false;
+    // stat, not lstat: a cache symlinked elsewhere is still a cache.
+    struct stat st;
+    if (::stat(native.constData(), &st) != 0 || !S_ISDIR(st.st_mode))
+        return false;
+    if (st.st_mode & 077)
+        ::chmod(native.constData(), 0700);
+    return true;
+}
+
+bool ensurePrivatePath(const QString &directory)
+{
+    const QString root = thumbnailRoot();
+    // Above the root is the ordinary cache directory; it keeps its own mode.
+    QDir().mkpath(QFileInfo(root).absolutePath());
+    if (!makePrivateDirectory(root))
+        return false;
+    QString current = root;
+    for (const QString &part : QDir(root).relativeFilePath(directory)
+                                   .split(QLatin1Char('/'), Qt::SkipEmptyParts)) {
+        current += QLatin1Char('/') + part;
+        if (!makePrivateDirectory(current))
+            return false;
+    }
+    return true;
+}
+
+// Written beside the target and renamed over it, 0600 — the spec's rule, so
+// another reader never sees half a PNG and no other user can read it at all.
+bool savePrivatePng(const QString &path, const QImage &image)
+{
+    QSaveFile file(path);
+    if (!file.open(QIODevice::WriteOnly))
+        return false;
+    file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
+    if (!image.save(&file, "png")) {
+        file.cancelWriting();
+        return false;
+    }
+    return file.commit();
+}
+
+// The image types decoded in-process: Qt's own, long-fuzzed readers. The
+// rest (TIFF, WebP, JPEG 2000, SVG, ICNS...) go to a sandboxed thumbnailer
+// when there is one, because a decoder bug there would otherwise run inside
+// the file manager itself.
+const QSet<QString> &inProcessImageTypes()
+{
+    static const QSet<QString> types = {
+        QStringLiteral("image/png"),
+        QStringLiteral("image/jpeg"),
+        QStringLiteral("image/gif"),
+        QStringLiteral("image/bmp"),
+        QStringLiteral("image/x-bmp"),
+        QStringLiteral("image/x-ms-bmp"),
+    };
+    return types;
+}
+
+// Far past any real photo or scan (16384²), and refused from the header alone
+// — before a decoder that ignores the scaled size gets to allocate for it.
+constexpr qint64 kMaximumSourcePixels = 16384LL * 16384LL;
+
+// What a thumbnailer hands back is as untrusted as its input: a compromised
+// one controls the PNG. Read strictly as PNG, sized from the header first.
+QImage readThumbnailerOutput(const QString &path, int size)
+{
+    if (!QFileInfo(path).isFile())
+        return {};
+    QImageReader reader(path, "png");
+    reader.setAutoDetectImageFormat(false);
+    const QSize reported = reader.size();
+    if (!reported.isValid() || qint64(reported.width()) * reported.height() > 4096LL * 4096LL)
+        return {};
+    reader.setAllocationLimit(128);
+    QImage image = reader.read();
+    if (!image.isNull() && (image.width() > size || image.height() > size))
+        image = image.scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    return image;
+}
+
+QMutex g_sandboxMutex;
+bool g_sandboxProbed = false;
+bool g_sandboxWorks = false;
 
 } // namespace
 
@@ -122,7 +221,8 @@ void ThumbnailCache::store(const QString &filePath, int bucket, QImage image,
         return;
 
     const QString cached = cachePathFor(filePath, bucket);
-    QDir().mkpath(QFileInfo(cached).absolutePath());
+    if (!ensurePrivatePath(QFileInfo(cached).absolutePath()))
+        return;
 
     image.setText(QStringLiteral("Thumb::URI"), uriFor(filePath));
     image.setText(QStringLiteral("Thumb::MTime"),
@@ -132,7 +232,7 @@ void ThumbnailCache::store(const QString &filePath, int bucket, QImage image,
     image.setText(QStringLiteral("X-Omanta::MTime-MSec"), QString::number(rendered.modifiedMSecs));
     image.setText(QStringLiteral("Software"), QStringLiteral("omanta"));
 
-    image.save(cached, "png");
+    savePrivatePng(cached, image);
 }
 
 void ThumbnailCache::markFailed(const QString &filePath, const Version &attempted)
@@ -140,7 +240,8 @@ void ThumbnailCache::markFailed(const QString &filePath, const Version &attempte
     if (attempted.size < 0)
         return;
     const QString marker = failMarkerFor(filePath);
-    QDir().mkpath(QFileInfo(marker).absolutePath());
+    if (!ensurePrivatePath(QFileInfo(marker).absolutePath()))
+        return;
 
     // A 1×1 image carrying the mtime: enough to stop retrying every scroll,
     // and it stops applying once the file itself changes.
@@ -151,7 +252,7 @@ void ThumbnailCache::markFailed(const QString &filePath, const Version &attempte
                       QString::number(QDateTime::fromMSecsSinceEpoch(attempted.modifiedMSecs)
                                           .toSecsSinceEpoch()));
     marker1x1.setText(QStringLiteral("Thumb::Size"), QString::number(attempted.size));
-    marker1x1.save(marker, "png");
+    savePrivatePng(marker, marker1x1);
 }
 
 bool ThumbnailCache::hasFailed(const QString &filePath)
@@ -278,11 +379,22 @@ QString ThumbnailCache::contentTypeOf(const QString &filePath)
     return mimeType;
 }
 
+bool ThumbnailCache::decodesInProcess(const QString &mimeType)
+{
+    return inProcessImageTypes().contains(mimeType);
+}
+
 QImage ThumbnailCache::render(const QString &filePath, const QString &mimeType, int size)
 {
     QImage image;
-    if (mimeType.startsWith(QLatin1String("image/")))
-        image = renderImageFile(filePath, size);
+    if (mimeType.startsWith(QLatin1String("image/"))) {
+        // An exotic format with a sandboxed thumbnailer never reaches an
+        // in-process decoder — not even as a fallback when the thumbnailer
+        // fails, since a file built to break that decoder fails there first.
+        const bool sandboxedElsewhere = canHandle(mimeType) && sandboxAvailable();
+        if (decodesInProcess(mimeType) || !sandboxedElsewhere)
+            image = renderImageFile(filePath, size);
+    }
     if (image.isNull())
         image = renderViaThumbnailer(filePath, mimeType, size);
     return image;
@@ -301,6 +413,8 @@ QImage ThumbnailCache::renderImageFile(const QString &filePath, int size)
 
     const QSize original = reader.size();
     if (original.isValid()) {
+        if (qint64(original.width()) * original.height() > kMaximumSourcePixels)
+            return {};
         // Ask the decoder for a reduced size where it can oblige. On a 60MP
         // scan that is the difference between instant and a visible stall.
         QSize target = original;
@@ -319,24 +433,133 @@ QImage ThumbnailCache::renderImageFile(const QString &filePath, int size)
 
 QImage ThumbnailCache::renderViaThumbnailer(const QString &filePath, const QString &mimeType, int size)
 {
-    QStringList argv = ThumbnailCache::commandFor(mimeType);
+    const QStringList argv = ThumbnailCache::commandFor(mimeType);
+    if (argv.isEmpty())
+        return {};
+    return runThumbnailer(argv, filePath, size);
+}
+
+QStringList ThumbnailCache::sandboxedCommand(const QStringList &command, const QString &input,
+                                             const QString &outputDirectory)
+{
+    const QString bwrap = QStandardPaths::findExecutable(QStringLiteral("bwrap"));
+    if (bwrap.isEmpty() || command.isEmpty())
+        return {};
+
+    // gnome-desktop's thumbnailer sandbox, near enough: no network, no other
+    // namespaces, nothing of the session's environment, the system read-only,
+    // the one input readable and only the output directory writable.
+    QStringList sandboxed = {
+        bwrap,
+        QStringLiteral("--unshare-all"),
+        QStringLiteral("--die-with-parent"),
+        QStringLiteral("--new-session"),
+        QStringLiteral("--clearenv"),
+        QStringLiteral("--setenv"), QStringLiteral("PATH"), QStringLiteral("/usr/bin:/bin"),
+        QStringLiteral("--setenv"), QStringLiteral("HOME"), QStringLiteral("/tmp"),
+        QStringLiteral("--setenv"), QStringLiteral("GIO_USE_VFS"), QStringLiteral("local"),
+        QStringLiteral("--ro-bind"), QStringLiteral("/usr"), QStringLiteral("/usr"),
+    };
+    // Merged-/usr systems link these into /usr; others have real directories.
+    for (const char *top : { "/bin", "/sbin", "/lib", "/lib64", "/lib32" }) {
+        const QFileInfo info(QString::fromLatin1(top));
+        if (info.isSymLink())
+            sandboxed << QStringLiteral("--symlink") << info.symLinkTarget() << info.filePath();
+        else if (info.isDir())
+            sandboxed << QStringLiteral("--ro-bind") << info.filePath() << info.filePath();
+    }
+    for (const char *shared : { "/etc/ld.so.cache", "/etc/fonts", "/etc/alternatives",
+                                "/etc/localtime", "/var/cache/fontconfig" })
+        sandboxed << QStringLiteral("--ro-bind-try") << QString::fromLatin1(shared)
+                  << QString::fromLatin1(shared);
+    sandboxed << QStringLiteral("--proc") << QStringLiteral("/proc")
+              << QStringLiteral("--dev") << QStringLiteral("/dev")
+              << QStringLiteral("--tmpfs") << QStringLiteral("/tmp");
+    // A thumbnailer installed outside the system tree (~/.local/bin) is
+    // let in on its own, read-only; nothing else of the home directory is.
+    // Judged by where its directory really is: /bin/sh is visible, because
+    // /bin leads into /usr inside the sandbox too.
+    const QString program = command.first();
+    const QString programDirectory =
+        QFileInfo(QFileInfo(program).absolutePath()).canonicalFilePath();
+    if (program.startsWith(QLatin1Char('/')) && programDirectory != QLatin1String("/usr")
+        && !programDirectory.startsWith(QLatin1String("/usr/"))) {
+        const QString real = QFileInfo(program).canonicalFilePath();
+        sandboxed << QStringLiteral("--ro-bind-try") << (real.isEmpty() ? program : real)
+                  << program;
+    }
+    // After the /tmp tmpfs, so files under /tmp stay visible. Same paths as
+    // outside, so %i, %u and %o need no rewriting.
+    if (!input.isEmpty())
+        sandboxed << QStringLiteral("--ro-bind") << input << input;
+    if (!outputDirectory.isEmpty())
+        sandboxed << QStringLiteral("--bind") << outputDirectory << outputDirectory;
+    sandboxed << QStringLiteral("--chdir") << QStringLiteral("/") << QStringLiteral("--");
+    return sandboxed + command;
+}
+
+bool ThumbnailCache::sandboxAvailable()
+{
+    QMutexLocker lock(&g_sandboxMutex);
+    if (g_sandboxProbed)
+        return g_sandboxWorks;
+    g_sandboxProbed = true;
+
+    // bwrap present is not bwrap working: unprivileged user namespaces can be
+    // switched off. One trial run answers for the session.
+    const QString truePath = QStandardPaths::findExecutable(QStringLiteral("true"));
+    QStringList probe = sandboxedCommand({ truePath.isEmpty() ? QStringLiteral("/usr/bin/true")
+                                                              : truePath },
+                                         QString(), QString());
+    if (!probe.isEmpty()) {
+        QProcess process;
+        process.setStandardOutputFile(QProcess::nullDevice());
+        process.setStandardErrorFile(QProcess::nullDevice());
+        process.start(probe.takeFirst(), probe);
+        g_sandboxWorks = process.waitForFinished(5000)
+            && process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0;
+        if (process.state() != QProcess::NotRunning) {
+            process.kill();
+            process.waitForFinished(1000);
+        }
+    }
+    if (!g_sandboxWorks)
+        qWarning("omanta: bubblewrap (bwrap) is missing or cannot create a sandbox; "
+                 "thumbnailers run unsandboxed");
+    return g_sandboxWorks;
+}
+
+QImage ThumbnailCache::runThumbnailer(QStringList argv, const QString &filePath, int size)
+{
     if (argv.isEmpty())
         return {};
 
-    QTemporaryFile output(QDir::tempPath() + QStringLiteral("/omanta-thumb-XXXXXX.png"));
-    if (!output.open())
+    // A directory of its own, so it is the only thing the sandbox can write.
+    QTemporaryDir outputDirectory(QDir::tempPath() + QStringLiteral("/omanta-thumb-XXXXXX"));
+    if (!outputDirectory.isValid())
         return {};
-    output.close();
+    const QString output = outputDirectory.filePath(QStringLiteral("thumbnail.png"));
 
-    const QString program = argv.takeFirst();
     for (QString &argument : argv) {
         argument.replace(QStringLiteral("%i"), filePath);
         argument.replace(QStringLiteral("%u"), QString::fromLatin1(QUrl::fromLocalFile(filePath).toEncoded()));
-        argument.replace(QStringLiteral("%o"), output.fileName());
+        argument.replace(QStringLiteral("%o"), output);
         argument.replace(QStringLiteral("%s"), QString::number(size));
     }
+    if (sandboxAvailable()) {
+        // Resolved here, with the session's PATH: inside, PATH is /usr/bin.
+        const QString resolved = QStandardPaths::findExecutable(argv.first());
+        if (!resolved.isEmpty())
+            argv.first() = resolved;
+        argv = sandboxedCommand(argv, QFileInfo(filePath).absoluteFilePath(), outputDirectory.path());
+    }
+    if (argv.isEmpty())
+        return {};
 
     QProcess process;
+    process.setStandardOutputFile(QProcess::nullDevice());
+    process.setStandardErrorFile(QProcess::nullDevice());
+    const QString program = argv.takeFirst();
     process.start(program, argv);
     // A wedged decoder must not hold a pool thread forever.
     if (!process.waitForFinished(20000)) {
@@ -347,7 +570,7 @@ QImage ThumbnailCache::renderViaThumbnailer(const QString &filePath, const QStri
     if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
         return {};
 
-    return QImage(output.fileName());
+    return readThumbnailerOutput(output, size);
 }
 
 namespace {
@@ -493,9 +716,9 @@ bool Thumbnails::canThumbnail(const QString &mimeType, qint64 fileSize) const
     if (!m_enabled || mimeType.isEmpty())
         return false;
 
-    // Images are decoded in-process; everything else needs a registered
-    // thumbnailer, and asking about a type nothing handles just costs a
-    // process launch that will fail.
+    // Images can always be decoded (in-process, or sandboxed for the exotic
+    // formats); everything else needs a registered thumbnailer, and asking
+    // about a type nothing handles just costs a process launch that will fail.
     //
     // The size cap guards ONLY the in-process image decode — Nautilus's
     // rule. An external thumbnailer (video, PDF) reads a few frames, not
