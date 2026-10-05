@@ -45,12 +45,12 @@ Rook lives at [jgarza9788/rook](https://github.com/jgarza9788/rook) with full om
 | Remote | Repo | Notes |
 | --- | --- | --- |
 | `origin` | jgarza9788/rook | Rook trunk is `main` |
-| `upstream` | jgarza9788/omanta | Push disabled; `polish/ui` is the base, `master` once polish/ui lands |
+| `upstream` | jgarza9788/omanta | Push disabled; sync from `master` (polish/ui was merged into it at `23e0163`) |
 
 ```sh
 git fetch upstream
-git log --oneline main..upstream/polish/ui   # review what's new
-git merge upstream/polish/ui                 # take everything
+git log --oneline main..upstream/master      # review what's new
+git merge upstream/master                    # take everything
 git cherry-pick <sha>                        # or take selected fixes
 ```
 
@@ -240,7 +240,7 @@ Phase 1 is the accent because every later feature registers as a command; buildi
 
 **Open questions**
 
-- [ ] What does the polish UI branch change vs master, and which parts carry over? (`git diff upstream/master...upstream/polish/ui`; see `log.md`)
+- [x] What does the polish UI branch change vs master, and which parts carry over? (Moot: polish/ui was merged into omanta master; see `log.md` for the change list.)
 - [ ] Packaging beyond Arch: AUR only, or also Flatpak and distro packages? (Decided: target any Wayland desktop.)
 - [ ] Scripting language: QJSEngine (JS) only, or also Lua/Python?
 - [ ] Keep Sushi preview as fallback or drop it?
