@@ -1,14 +1,31 @@
 # rook
 
+> [!WARNING]
+> **Rook is a work-in-progress app.** It is under active development, not
+> ready for daily use, and anything — keys, config files, the UI — may change
+> without notice. Expect rough edges and missing features, and keep backups of
+> anything you point it at.
+
 The pro edition of [omanta](https://github.com/jgarza9788/omanta): a
 command-palette-first file manager with power-user tools — Rename Studio
 (bulk rename with live preview), regex everywhere, folder compare/sync,
 duplicate finder, checksums, macros and scripting. See the
 [design document](docs/design.md) for the plan.
 
-> **Work in progress.** Rook currently ships omanta's feature set under the
-> rook name; the palette and pro features land phase by phase (see the
-> roadmap in the design doc). Everything below describes that base.
+## Status
+
+| Area | State |
+| --- | --- |
+| omanta base (views, tabs, split, file ops, search, archives, quick view) | Working — inherited from omanta |
+| Rook UI (slim top line, Vim-style status line, compact density, pane focus) | In progress |
+| Command palette (commands, `/` path, `~` places, `@` filter, `?` search, `=` calc) | In progress |
+| Palette modes `#` tags, `>` shell, `!` scripts | Planned |
+| Pro features (Rename Studio, folder compare/sync, duplicates, macros, scripting) | Planned |
+| Packages / releases | None yet — build from source |
+
+To try it from a checkout: `./build_and_run.sh`.
+
+The rest of this README describes the omanta base rook is built on.
 
 A native file manager for [Omarchy](https://omarchy.org), built with Qt Quick
 and GIO as a drop-in replacement for GNOME Files (Nautilus) — same
